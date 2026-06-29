@@ -1,0 +1,14 @@
+{
+  "slug": "digitalvault-9x2aa",
+  "name": "DigitalVault",
+  "description": "An interactive 3D credit card wallet component featuring smooth glassmorphism, hover-to-fan card animations, and a contextual transaction panel triggered by card selection. Built with React and styled-components.",
+  "category": "Cards",
+  "tags": [],
+  "tech_stack": [],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/cards/digitalvault-9x2aa/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/cards/digitalvault-9x2aa/index.jsx",
+  "created_at": "2026-06-29T12:15:26.170Z"
+}
