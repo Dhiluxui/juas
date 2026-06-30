@@ -1,23 +1,15 @@
 {
   "slug": "neon-glow-text",
   "name": "Neon Glow Text",
-  "description": "A pulsing CSS text-shadow bloom simulating a bright neon light.",
+  "description": "A cyberpunk-style neon glowing text effect",
   "category": "Text Animations",
-  "tags": [
-    "neon",
-    "glow",
-    "text-shadow",
-    "framer-motion"
-  ],
-  "tech_stack": [
-    "React",
-    "Framer Motion",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/neon-glow-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/neon-glow-text/index.jsx",
-  "created_at": "2026-06-30T13:24:53.371Z"
+  "created_at": "2026-06-30T13:28:55.955Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/neon-glow-text/thumbnail.webp"
 }
