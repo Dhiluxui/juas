@@ -1,23 +1,15 @@
 {
   "slug": "magnetic-squeeze-text",
   "name": "Magnetic Squeeze Text",
-  "description": "A flexbox-driven hover interaction forcing negative margins to pull surrounding letters tightly inward.",
+  "description": "A magnetic squeeze hover effect on text",
   "category": "Text Animations",
-  "tags": [
-    "magnetic",
-    "squeeze",
-    "flexbox",
-    "hover"
-  ],
-  "tech_stack": [
-    "React",
-    "Framer Motion",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/magnetic-squeeze-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/magnetic-squeeze-text/index.jsx",
-  "created_at": "2026-06-30T12:21:08.268Z"
+  "created_at": "2026-06-30T13:32:06.026Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/magnetic-squeeze-text/thumbnail.webp"
 }
