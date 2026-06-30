@@ -1,0 +1,24 @@
+{
+  "slug": "shattered-glass-text",
+  "name": "Shattered Glass Text",
+  "description": "Typography mathematically sliced in half using CSS clip-path and dual spring physics.",
+  "category": "Text Animations",
+  "tags": [
+    "shatter",
+    "clip-path",
+    "framer-motion",
+    "broken"
+  ],
+  "tech_stack": [
+    "React",
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shattered-glass-text/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/shattered-glass-text/index.jsx",
+  "created_at": "2026-06-30T08:30:56.177Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shattered-glass-text/thumbnail.svg"
+}
