@@ -1,0 +1,22 @@
+{
+  "slug": "squiggly-text",
+  "name": "Squiggly Text",
+  "description": "A boiling line displacement mapping imitating hand-drawn squiggles.",
+  "category": "Text Animations",
+  "tags": [
+    "squiggly",
+    "cartoon",
+    "filter",
+    "react"
+  ],
+  "tech_stack": [
+    "React",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/squiggly-text/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/squiggly-text/index.jsx",
+  "created_at": "2026-06-30T11:51:38.009Z"
+}
