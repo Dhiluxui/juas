@@ -1,0 +1,23 @@
+{
+  "slug": "falling-leaves-text",
+  "name": "Falling Leaves Text",
+  "description": "A true 3D entry animation simulating falling leaves mapping X, Y, and Z rotational matrices.",
+  "category": "Text Animations",
+  "tags": [
+    "falling",
+    "3d",
+    "perspective",
+    "framer-motion"
+  ],
+  "tech_stack": [
+    "React",
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/falling-leaves-text/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/falling-leaves-text/index.jsx",
+  "created_at": "2026-06-30T11:51:59.364Z"
+}
