@@ -1,0 +1,21 @@
+{
+  "slug": "-x7qs6",
+  "name": "Untitled Component",
+  "description": "",
+  "category": "Components",
+  "tags": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/-x7qs6/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/components/-x7qs6/index.jsx",
+  "created_at": "2026-06-30T14:07:38.388Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/-x7qs6/thumbnail.webp"
+}
