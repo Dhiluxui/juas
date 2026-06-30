@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export const SlideUpText = ({ text = "Slide Up Reveal" }: { text?: string }) => {
+export const Slide Up Text = ({ text = "Slide Up Reveal" }: { text?: string }) => {
   return (
     <div className="overflow-hidden py-2">
       <motion.h2
