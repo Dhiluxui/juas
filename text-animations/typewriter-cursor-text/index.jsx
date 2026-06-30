@@ -21,12 +21,12 @@ export const TypewriterCursorText = ({ text = "TERMINAL", duration = 2, splitTyp
   }, [text, duration]);
 
   return (
-    <h2 className="text-4xl md:text-6xl font-black text-green-400 py-2 px-1 font-mono flex items-center">
-      <span>{displayedText}</span>
+    <h2 className="text-4xl md:text-6xl font-black text-green-400 py-2 px-1 font-mono">
+      <span>{displayedText || "\u200B"}</span>
       <motion.span
         animate={{ opacity: [1, 0] }}
         transition={{ duration: 0.8, repeat: Infinity, ease: "steps(2)" }}
-        className="inline-block w-[0.5em] h-[1em] bg-green-400 ml-1 align-middle"
+        className="inline-block w-[0.5em] h-[0.9em] bg-green-400 ml-1 translate-y-[0.1em]"
       />
     </h2>
   );
