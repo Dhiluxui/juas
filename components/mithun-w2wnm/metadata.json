@@ -1,0 +1,20 @@
+{
+  "slug": "mithun-w2wnm",
+  "name": "mithun",
+  "description": "",
+  "category": "Components",
+  "tags": [
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/mithun-w2wnm/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/components/mithun-w2wnm/index.jsx",
+  "created_at": "2026-07-01T11:47:03.766Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/mithun-w2wnm/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/mithun-w2wnm/video.webm"
+}
