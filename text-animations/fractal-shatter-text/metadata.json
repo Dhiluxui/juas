@@ -1,0 +1,25 @@
+{
+  "slug": "fractal-shatter-text",
+  "name": "Fractal Shatter Text",
+  "description": "Interactive glass shattering effect using complex clip paths.",
+  "category": "Text Animations",
+  "tags": [
+    "text",
+    "animation",
+    "framer-motion",
+    "shatter",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/fractal-shatter-text/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/fractal-shatter-text/index.jsx",
+  "created_at": "2026-07-01T11:09:58.607Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/fractal-shatter-text/thumbnail.svg"
+}
