@@ -1,0 +1,22 @@
+{
+  "slug": "new-shader-tzayv",
+  "name": "New Shader",
+  "description": "Test",
+  "category": "Effects",
+  "tags": [
+    "Tailwind CSS",
+    "Mithun"
+  ],
+  "tech_stack": [
+    "Tailwind CSS",
+    "Mithun"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/effects/new-shader-tzayv/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/effects/new-shader-tzayv/index.jsx",
+  "created_at": "2026-07-01T11:27:18.547Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/effects/new-shader-tzayv/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/effects/new-shader-tzayv/video.webm"
+}
