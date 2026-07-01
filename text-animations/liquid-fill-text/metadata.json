@@ -3,13 +3,20 @@
   "name": "Liquid Fill Text",
   "description": "A continuous wavy liquid filling text animation",
   "category": "Text Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/liquid-fill-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/liquid-fill-text/index.jsx",
-  "created_at": "2026-06-30T13:51:23.041Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/liquid-fill-text/thumbnail.webp"
+  "created_at": "2026-07-01T11:20:27.507Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/liquid-fill-text/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/liquid-fill-text/video.webm"
 }
