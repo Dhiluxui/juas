@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-export const EightBitCurtainText = ({ text = "PIXELATE", duration = 1.5, splitType = "chars" }: any) => {
+export const EightBitCurtainText = ({ text = "PIXELATE x JUAS.DEV", duration = 1.5, splitType = "chars" }: any) => {
   const elements = splitType === "words" ? text.split(" ") : Array.from(text);
   
   // Creates a 5x5 mathematical grid of blocks to hide the letter
