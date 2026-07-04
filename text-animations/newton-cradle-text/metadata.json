@@ -3,13 +3,20 @@
   "name": "Newton Cradle Text",
   "description": "A Newton Cradle swinging text effect",
   "category": "Text Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/newton-cradle-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/newton-cradle-text/index.jsx",
-  "created_at": "2026-06-30T13:50:22.100Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/newton-cradle-text/thumbnail.webp"
+  "created_at": "2026-07-04T14:47:04.071Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/newton-cradle-text/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/newton-cradle-text/video.webm"
 }
