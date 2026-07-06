@@ -1,0 +1,22 @@
+{
+  "slug": "wave-text-cq5x4",
+  "name": "Wave Text",
+  "description": "A flexible, highly customizable text animation for your project.",
+  "category": "Text Animations",
+  "tags": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Framer Motion",
+    "Tailwind CSS"
+  ],
+  "creator_id": "2718e409-e7ac-498c-86e1-3017bd60011a",
+  "creator_username": "2718e409",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/wave-text-cq5x4/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/wave-text-cq5x4/index.jsx",
+  "created_at": "2026-07-06T01:49:08.161Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/wave-text-cq5x4/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/wave-text-cq5x4/video.webm"
+}
