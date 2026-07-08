@@ -84,21 +84,12 @@ MetalButton.displayName = "MetalButton";
 
 const App = () => {
   return (
-    <div className="min-h-screen w-full  text-white flex flex-col items-center justify-center p-8 font-sans selection:bg-blue-500/30">
       
-      {/* Sophisticated Background Ambience */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] left-[20%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[20%] w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[100px]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
-      </div>
-
       <div className="relative z-10 w-full flex items-center justify-center">
         <MetalButton variant="blue" className="w-[240px] text-base h-14">
           Cobalt
         </MetalButton>
       </div>
-    </div>
   );
 };
 
