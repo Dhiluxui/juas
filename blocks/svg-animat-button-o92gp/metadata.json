@@ -1,0 +1,20 @@
+{
+  "slug": "svg-animat-button-o92gp",
+  "name": "SVG Animat button",
+  "description": "",
+  "category": "Blocks",
+  "tags": [
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/svg-animat-button-o92gp/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/blocks/svg-animat-button-o92gp/index.jsx",
+  "created_at": "2026-07-08T06:37:01.539Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/svg-animat-button-o92gp/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/svg-animat-button-o92gp/video.webm"
+}
