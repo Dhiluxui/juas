@@ -1,0 +1,24 @@
+{
+  "slug": "gradient-shine-5vyqn",
+  "name": "Gradient Shine",
+  "description": "liquid physics and focused entirely on the gradient-driven, brushed metal interaction.",
+  "category": "Blocks",
+  "tags": [
+    "Tailwind CSS",
+    "Gradient",
+    "Shine"
+  ],
+  "tech_stack": [
+    "Tailwind CSS",
+    "Gradient",
+    "Shine"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/gradient-shine-5vyqn/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/blocks/gradient-shine-5vyqn/index.jsx",
+  "created_at": "2026-07-08T06:29:39.679Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/gradient-shine-5vyqn/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/blocks/gradient-shine-5vyqn/video.webm"
+}
