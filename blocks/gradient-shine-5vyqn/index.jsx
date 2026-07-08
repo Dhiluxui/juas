@@ -84,7 +84,7 @@ MetalButton.displayName = "MetalButton";
 
 const App = () => {
   return (
-    <div className="min-h-screen w-full bg-[#050505] text-white flex flex-col items-center justify-center p-8 font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen w-full  text-white flex flex-col items-center justify-center p-8 font-sans selection:bg-blue-500/30">
       
       {/* Sophisticated Background Ambience */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
