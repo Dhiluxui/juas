@@ -1,0 +1,20 @@
+{
+  "slug": "test-lm595",
+  "name": "test",
+  "description": "",
+  "category": "Components",
+  "tags": [
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/test-lm595/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/components/test-lm595/index.jsx",
+  "created_at": "2026-07-10T03:23:39.110Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/test-lm595/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/components/test-lm595/video.webm"
+}
