@@ -1,0 +1,20 @@
+{
+  "slug": "test-mpioc",
+  "name": "test",
+  "description": "",
+  "category": "Backgrounds",
+  "tags": [
+    "Tailwind CSS"
+  ],
+  "tech_stack": [
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/test-mpioc/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/test-mpioc/index.jsx",
+  "created_at": "2026-07-10T08:59:51.191Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/test-mpioc/thumbnail.webp",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/test-mpioc/video.webm"
+}
