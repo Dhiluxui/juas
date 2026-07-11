@@ -1,0 +1,29 @@
+{
+  "slug": "award-winning-sticker-peel",
+  "name": "Award-Winning Sticker Peel",
+  "description": "Re-engineered sticker peel with magnetic curl physics, RGB chromatic splitting on drag, organic torn edge displacement mapping, and an iridescent holographic foil backing.",
+  "category": "Image Effects",
+  "tags": [
+    "sticker",
+    "peel",
+    "physics",
+    "gsap",
+    "3d",
+    "image-effect",
+    "foil",
+    "holographic"
+  ],
+  "tech_stack": [
+    "React",
+    "GSAP",
+    "Tailwind CSS",
+    "SVG Filters"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/image-effects/award-winning-sticker-peel/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/image-effects/award-winning-sticker-peel/index.jsx",
+  "created_at": "2026-07-11T12:50:36.059Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/image-effects/award-winning-sticker-peel/thumbnail.svg"
+}
