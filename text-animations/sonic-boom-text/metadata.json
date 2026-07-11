@@ -1,0 +1,15 @@
+{
+  "slug": "sonic-boom-text",
+  "name": "Sonic Boom Text",
+  "description": "A sonic boom text animation with an outward radiating shockwave.",
+  "category": "Text Animations",
+  "tags": [],
+  "tech_stack": [],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/sonic-boom-text/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/sonic-boom-text/index.jsx",
+  "created_at": "2026-07-11T11:47:13.790Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/sonic-boom-text/thumbnail.svg"
+}
