@@ -1,22 +1,15 @@
 {
   "slug": "glitch-3d-text",
   "name": "Glitch 3D Text",
-  "description": "A stereoscopic 3D glitch animation",
+  "description": "A 3D glitch text animation simulating system errors with chromatic aberrations.",
   "category": "Text Animations",
-  "tags": [
-    "Framer Motion",
-    "Tailwind CSS"
-  ],
-  "tech_stack": [
-    "Framer Motion",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/glitch-3d-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/glitch-3d-text/index.jsx",
-  "created_at": "2026-07-05T03:04:27.518Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/glitch-3d-text/thumbnail.webp",
-  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/glitch-3d-text/video.webm"
+  "created_at": "2026-07-11T11:44:47.412Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/glitch-3d-text/thumbnail.svg"
 }
