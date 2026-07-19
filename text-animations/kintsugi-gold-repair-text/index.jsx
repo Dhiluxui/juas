@@ -7,7 +7,7 @@ export const KintsugiGoldRepairText = ({ text = "KINTSUGI" }: { text?: string })
 
   return (
     <div 
-      className="relative py-24 px-8 w-full min-h-[300px] flex justify-center items-center bg-zinc-950 overflow-hidden rounded-2xl"
+      className="relative py-24 px-8 w-full w-full flex justify-center items-center overflow-hidden rounded-2xl"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -55,9 +55,6 @@ export const KintsugiGoldRepairText = ({ text = "KINTSUGI" }: { text?: string })
           );
         })}
       </h2>
-      <div className="absolute bottom-6 text-zinc-600 font-mono text-sm tracking-widest uppercase pointer-events-none">
-        Hover to Repair with Gold
-      </div>
     </div>
   );
 };
