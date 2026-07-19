@@ -11,7 +11,7 @@ export const GlitchText3D = ({
   const elements = splitType === "words" ? text.split(" ") : Array.from(text);
 
   return (
-    <div className="relative py-24 px-8 flex justify-center items-center overflow-hidden min-h-[300px] bg-neutral-950">
+    <div className="relative py-24 px-8 flex justify-center items-center overflow-hidden w-full h-full">
       
       {/* Background static noise simulation */}
       <div 
