@@ -4,11 +4,10 @@
   "description": "A prismatic diamond text animation featuring SVG turbulence filtering and chromatic aberration.",
   "category": "Text Animations",
   "tags": [
-    "text animation",
-    "prismatic",
-    "diamond",
-    "svg filter",
-    "holographic"
+    "React",
+    "Framer Motion",
+    "Tailwind CSS",
+    "SVG Filters"
   ],
   "tech_stack": [
     "React",
@@ -21,6 +20,7 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/prismatic-diamond-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/prismatic-diamond-text/index.jsx",
-  "created_at": "2026-07-11T12:09:46.251Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/prismatic-diamond-text/thumbnail.svg"
+  "created_at": "2026-07-19T09:34:35.223Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/prismatic-diamond-text/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/prismatic-diamond-text/video.webm"
 }
