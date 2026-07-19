@@ -1,19 +1,15 @@
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 // Cycle through multiple phrases with a fluid morph
 const PHRASES = ["FLUID", "MORPH", "FLOW", "LIQUID"];
 
-export const FluidMorphText = ({
+export default function App({
   text = "FLUID MORPH",
   duration = 2.5,
-}: {
-  text?: string;
-  text1?: string;
-  text2?: string;
-  duration?: number;
-}) => {
+}) {
   const parts = text.split(" ");
+  // If the text has 2 or more words, use them. Otherwise, default to the PHRASES array.
   const words = parts.length >= 2 ? parts : PHRASES;
   const [currentIdx, setCurrentIdx] = useState(0);
   const filterId = "fluid-morph-filter";
@@ -26,7 +22,8 @@ export const FluidMorphText = ({
   }, [duration, words.length]);
 
   return (
-    <div className="relative py-20 px-6 flex justify-center items-center overflow-hidden min-h-[280px]">
+    <div className="relative py-20 px-6 flex justify-center items-center overflow-hidden min-h-screen w-full bg-neutral-950">
+      {/* Hidden SVG for the Gooey/Fluid Filter */}
       <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
         <defs>
           <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
@@ -46,13 +43,16 @@ export const FluidMorphText = ({
         </defs>
       </svg>
 
-      {/* Progress dots */}
+      {/* Progress dots at the bottom */}
       <div className="absolute bottom-6 flex gap-2">
         {words.map((_, i) => (
           <motion.div
             key={i}
             className="w-1.5 h-1.5 rounded-full"
-            animate={{ backgroundColor: i === currentIdx ? "#a78bfa" : "rgba(255,255,255,0.2)", scale: i === currentIdx ? 1.5 : 1 }}
+            animate={{ 
+              backgroundColor: i === currentIdx ? "#a78bfa" : "rgba(255,255,255,0.2)", 
+              scale: i === currentIdx ? 1.5 : 1 
+            }}
             transition={{ duration: 0.3 }}
           />
         ))}
@@ -62,7 +62,7 @@ export const FluidMorphText = ({
         {words.map((word, wi) => (
           <motion.h2
             key={wi}
-            className="absolute text-6xl md:text-8xl font-black tracking-widest uppercase"
+            className="absolute text-5xl md:text-8xl font-black tracking-widest uppercase text-center"
             style={{
               color: `hsl(${(wi / words.length) * 120 + 260}, 80%, 70%)`,
               textShadow: `0 0 30px hsl(${(wi / words.length) * 120 + 260}, 80%, 60%, 0.5)`,
@@ -81,4 +81,4 @@ export const FluidMorphText = ({
       </div>
     </div>
   );
-};
+}
