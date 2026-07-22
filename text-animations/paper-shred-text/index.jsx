@@ -4,7 +4,7 @@ export const PaperShredText = ({ text = "SHREDDER" }: any) => {
   const slices = 12;
 
   return (
-    <div className="relative py-16 px-4 w-full h-[300px] flex justify-center items-center overflow-hidden rounded-xl">
+    <div className="relative py-16 px-4 w-full h-full flex justify-center items-center overflow-hidden rounded-xl">
       <div className="relative text-6xl md:text-9xl font-black text-white uppercase">
         {/* We stack identical text layers, each clipped to a vertical slice */}
         {Array.from({ length: slices }).map((_, i) => {
