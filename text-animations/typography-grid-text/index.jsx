@@ -1,8 +1,9 @@
-import { motion } from "framer-motion";
+import React from 'react';
+import { motion } from 'framer-motion';
 
-export const TypographyGridText = ({ text = "GRID" }: any) => {
+export const TypographyGridText = ({ text = "GRID" }) => {
   return (
-    <div className="relative py-12 px-4 w-full min-h-[350px] flex justify-center items-center rounded-xl overflow-hidden">
+    <div className="relative py-12 px-4 w-full h-full flex justify-center items-center rounded-xl overflow-hidden">
       <motion.div 
         className="grid grid-cols-3 grid-rows-3 gap-2 md:gap-6 w-full max-w-[800px] justify-items-center items-center cursor-pointer p-8"
         whileHover="hover"
@@ -33,3 +34,11 @@ export const TypographyGridText = ({ text = "GRID" }: any) => {
     </div>
   );
 };
+
+export default function App() {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <TypographyGridText text="GRID" />
+    </div>
+  );
+}
