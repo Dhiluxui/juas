@@ -3,13 +3,32 @@
   "name": "Origami Fold Text",
   "description": "An origami-style paper folding text animation looping infinitely.",
   "category": "Text Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "Framer Motion",
+    "Tailwind CSS",
+    "Inline Styles",
+    "3D Transform",
+    "Text Animation",
+    "Morphing",
+    "Responsive"
+  ],
+  "tech_stack": [
+    "React",
+    "Framer Motion",
+    "Tailwind CSS",
+    "Inline Styles",
+    "3D Transform",
+    "Text Animation",
+    "Morphing",
+    "Responsive"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/origami-fold-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/origami-fold-text/index.jsx",
-  "created_at": "2026-07-11T11:46:11.655Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/origami-fold-text/thumbnail.svg"
+  "created_at": "2026-07-22T07:34:40.011Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/origami-fold-text/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/origami-fold-text/video.webm"
 }
