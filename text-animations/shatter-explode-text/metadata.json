@@ -3,13 +3,36 @@
   "name": "Shatter Explode Text",
   "description": "An interactive text animation that shatters and rebuilds when clicked.",
   "category": "Text Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "Framer Motion",
+    "Spring Physics",
+    "Tailwind CSS",
+    "Particle System",
+    "useState",
+    "3D Transform",
+    "Text Animation",
+    "Noise / Randomness",
+    "Responsive"
+  ],
+  "tech_stack": [
+    "React",
+    "Framer Motion",
+    "Spring Physics",
+    "Tailwind CSS",
+    "Particle System",
+    "useState",
+    "3D Transform",
+    "Text Animation",
+    "Noise / Randomness",
+    "Responsive"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shatter-explode-text/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/shatter-explode-text/index.jsx",
-  "created_at": "2026-07-11T11:46:15.235Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shatter-explode-text/thumbnail.svg"
+  "created_at": "2026-07-22T07:53:27.841Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shatter-explode-text/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/shatter-explode-text/video.webm"
 }
