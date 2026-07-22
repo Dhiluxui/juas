@@ -5,7 +5,7 @@ export default function App({ text = "PEEL ME" }) {
   const letters = Array.from(text);
 
   return (
-    <div className="relative min-h-screen w-full flex justify-center items-center overflow-hidden font-sans selection:bg-zinc-300">
+    <div className="relative min-h-screen w-full flex justify-center bg-zinc-300 items-center overflow-hidden font-sans selection:bg-zinc-300">
       
       {}
       <h2 
