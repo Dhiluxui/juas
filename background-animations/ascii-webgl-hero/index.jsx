@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Terminal, ShieldAlert, Cpu } from 'lucide-react';
 
-// ============================================================================
-// 1. Canvas 2D Version (Included from user specs)
-// ============================================================================
+
 interface AsciiShaderProps {
   imageSrc: string;
   className?: string;
@@ -33,7 +32,7 @@ export function AsciiShader({ imageSrc, className = '', charSize = 12 }: AsciiSh
       let lastTime = 0;
       
       const render = (time: number) => {
-        if (time - lastTime < 41) {
+        if (time - lastTime < 41) { // Throttle frame rate slightly for classic feel
           animationFrameId = requestAnimationFrame(render);
           return;
         }
@@ -81,7 +80,7 @@ export function AsciiShader({ imageSrc, className = '', charSize = 12 }: AsciiSh
             const g = pixels[i + 1];
             const b = pixels[i + 2];
             
-            let brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+            const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
             
             if (brightness > 40) {
               const noise = Math.sin(x * 0.2 + t) * Math.cos(y * 0.2 + t) * 50;
@@ -117,9 +116,7 @@ export function AsciiShader({ imageSrc, className = '', charSize = 12 }: AsciiSh
   );
 }
 
-// ============================================================================
-// 2. WebGL Version
-// ============================================================================
+
 const vertexShaderSource = `
   attribute vec2 a_position;
   varying vec2 v_uv;
@@ -247,6 +244,7 @@ const fragmentShaderSource = `
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
+
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -414,9 +412,6 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
   );
 }
 
-// ============================================================================
-// 3. Background Wrapper
-// ============================================================================
 
 export const AsciiShaderHero = ({ 
   children, 
@@ -434,10 +429,21 @@ export const AsciiShaderHero = ({
       </div>
 
       {/* Content Overlay */}
-      <div className="relative z-10 w-full h-full">
+      <div className="relative z-10 w-full h-full flex items-center justify-start px-8 md:px-16 lg:px-32">
         {children}
       </div>
       
     </div>
   );
 };
+
+
+export default function App() {
+  return (
+    <div className="w-screen h-screen m-0 p-0 overflow-hidden bg-black text-white">
+      <AsciiShaderHero imageSrc="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop">
+        {/* The overlay card has been removed */}
+      </AsciiShaderHero>
+    </div>
+  );
+}
