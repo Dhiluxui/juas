@@ -1,0 +1,27 @@
+{
+  "slug": "ascii-webgl-hero",
+  "name": "ASCII WebGL Hero",
+  "description": "A high-performance, frame-independent 3D ASCII Torus projection running on pure JavaScript math logic. Features brutalist terminal aesthetics.",
+  "category": "Hero",
+  "tags": [
+    "ascii",
+    "3d",
+    "terminal",
+    "hacker",
+    "torus",
+    "hero",
+    "brutalist"
+  ],
+  "tech_stack": [
+    "React",
+    "Tailwind CSS",
+    "Mathematics"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/hero/ascii-webgl-hero/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/hero/ascii-webgl-hero/index.jsx",
+  "created_at": "2026-07-24T06:47:35.033Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/hero/ascii-webgl-hero/thumbnail.svg"
+}
