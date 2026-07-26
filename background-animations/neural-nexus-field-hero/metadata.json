@@ -1,0 +1,24 @@
+{
+  "slug": "neural-nexus-field-hero",
+  "name": "Neural Nexus Field",
+  "description": "Neural Nexus Field background animation",
+  "category": "Background Animations",
+  "tags": [
+    "shader",
+    "webgl",
+    "background"
+  ],
+  "tech_stack": [
+    "React",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-nexus-field-hero/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/neural-nexus-field-hero/index.jsx",
+  "created_at": "2026-07-26T17:06:19.088Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-nexus-field-hero/thumbnail.svg"
+}
