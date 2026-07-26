@@ -4,23 +4,39 @@
   "description": "A recursive folding labyrinth of iridescent bismuth crystals.",
   "category": "Background Animations",
   "tags": [
-    "shader",
-    "webgl",
-    "bismuth",
-    "crystal",
-    "background"
+    "React",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
   ],
   "tech_stack": [
     "React",
     "WebGL",
     "GLSL",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/bismuth-labyrinth-hero/index.jsx",
-  "created_at": "2026-07-26T16:31:52.783Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/thumbnail.svg"
+  "created_at": "2026-07-26T16:50:48.466Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/video.webm"
 }
