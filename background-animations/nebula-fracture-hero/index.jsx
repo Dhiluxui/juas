@@ -54,7 +54,6 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
     
     gl.useProgram(program);
 
-    // Geometry
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
@@ -80,7 +79,6 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     }
 
-    // Uniforms
     const timeLocation = gl.getUniformLocation(program, 'iTime');
     const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
     const mouseLocation = gl.getUniformLocation(program, 'iMouse');
@@ -94,18 +92,15 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
     const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
     const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
 
-    // Mouse tracking
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr; // flip Y for standard webgl
+      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Initial mouse center
     let initialSet = false;
-
     let animationFrameId: number;
     let startTime = performance.now();
 
@@ -132,16 +127,17 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      if (timeLocation !== null) gl.uniform1f(timeLocation, (time - startTime) * 0.001);
+      const t = (time - startTime) * 0.001;
+      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
 
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, (time - startTime) * 0.001);
+      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
       if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
       if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
       if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
 
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, (time - startTime) * 0.001);
+      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
       if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
       if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
 
@@ -165,18 +161,18 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
   return (
     <canvas
       ref={canvasRef}
-      className={\`w-full h-full block pointer-events-auto \${className}\`}
+      className={`w-full h-full block pointer-events-auto ${className}`}
       style={{ touchAction: 'none' }}
     />
   );
 }
 
 const shaderData = {
-  vertex: \`
+  vertex: `
     attribute vec2 position;
     void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  \`,
-  fragment: \`
+  `,
+  fragment: `
       precision highp float;
       uniform float uTime;
       uniform vec2 uResolution;
@@ -187,7 +183,6 @@ const shaderData = {
           return mat2(c, -s, s, c);
       }
       
-      // 3D Noise for nebula
       float hash(vec3 p) {
           p = fract(p * vec3(123.34, 456.21, 567.89));
           p += dot(p, p.zyx + 31.32);
@@ -213,7 +208,6 @@ const shaderData = {
           return f;
       }
 
-      // Voronoi-based fracturing
       float voronoi(vec3 p) {
           vec3 n = floor(p);
           vec3 f = fract(p);
@@ -230,12 +224,14 @@ const shaderData = {
       }
 
       float mapGlass(vec3 p) {
-          // A wall of fractured glass
-          float d = p.z; // infinite plane
-          float v = voronoi(p * 2.0);
-          d += smoothstep(0.0, 0.1, v) * 0.1; // Add displacement from fractures
+          // A flat plane
+          float d = p.z; 
           
-          return max(d, p.z - 0.2); // make it a thin slab
+          // Displace it with large voronoi to look like shattered glass
+          float v = voronoi(p * 2.0);
+          d += smoothstep(0.0, 1.0, v) * 0.2;
+          
+          return d;
       }
 
       vec3 calcNormal(vec3 p) {
@@ -252,7 +248,7 @@ const shaderData = {
           vec2 m = uMouse.xy / uResolution.xy;
           if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5);
 
-          vec3 ro = vec3((m.x - 0.5) * 2.0, (m.y - 0.5) * 2.0, -3.0);
+          vec3 ro = vec3((m.x - 0.5) * 2.0, (m.y - 0.5) * 2.0, -2.0);
           vec3 rd = normalize(vec3(uv, 1.0));
           
           float t = 0.0;
@@ -260,11 +256,11 @@ const shaderData = {
           bool hitGlass = false;
           vec3 glassNormal = vec3(0.0);
           
-          for(int i = 0; i < 60; i++) {
+          for(int i = 0; i < 50; i++) {
               vec3 p = ro + rd * t;
               float d = mapGlass(p);
               
-              if(d < 0.002) {
+              if(d < 0.001) {
                   hitGlass = true;
                   glassNormal = calcNormal(p);
                   break;
@@ -312,7 +308,7 @@ const shaderData = {
           
           gl_FragColor = vec4(col, 1.0);
       }
-  \`
+  `
 };
 
 export interface NebulaFractureHeroProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -321,7 +317,7 @@ export interface NebulaFractureHeroProps extends React.HTMLAttributes<HTMLDivEle
 }
 
 export const NebulaFractureHero = ({ className = '', children, ...props }: NebulaFractureHeroProps) => (
-  <div className={\`relative w-full h-full bg-[#010103] overflow-hidden font-sans \${className}\`} {...props}>
+  <div className={`relative w-full h-full bg-[#010103] overflow-hidden font-sans ${className}`} {...props}>
     <div className="absolute inset-0 z-0">
       <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} />
     </div>
