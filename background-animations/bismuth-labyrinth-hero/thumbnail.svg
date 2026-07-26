@@ -1,0 +1,1 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#000000"/><path d="M100 100h200v200H100" fill="none" stroke="url(#lgrad)" stroke-width="4"/><linearGradient id="lgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d946ff"/><stop offset="100%" stop-color="#68b5eb"/></linearGradient></svg>
