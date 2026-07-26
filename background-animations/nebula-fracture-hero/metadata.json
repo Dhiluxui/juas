@@ -1,7 +1,7 @@
 {
   "slug": "nebula-fracture-hero",
   "name": "Nebula Fracture",
-  "description": "A glowing nebula viewed through a wall of fractured, refracted glass.",
+  "description": "A fractured glass effect revealing a volumetric nebula.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/nebula-fracture-hero/index.jsx",
-  "created_at": "2026-07-26T16:03:59.135Z",
+  "created_at": "2026-07-26T16:21:46.260Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-hero/thumbnail.svg"
 }
