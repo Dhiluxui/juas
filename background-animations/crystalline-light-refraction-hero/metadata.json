@@ -1,7 +1,7 @@
 {
   "slug": "crystalline-light-refraction-hero",
   "name": "Crystalline Light Refraction",
-  "description": "Complex crystalline geometry refracting environmental light.",
+  "description": "A rotating cluster of giant crystals casting refracted light and chromatic dispersion.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -22,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/crystalline-light-refraction-hero/index.jsx",
-  "created_at": "2026-07-26T16:19:22.294Z",
+  "created_at": "2026-07-26T16:33:57.538Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/thumbnail.svg"
 }
