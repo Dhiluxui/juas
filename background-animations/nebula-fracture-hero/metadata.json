@@ -1,14 +1,15 @@
 {
   "slug": "nebula-fracture-hero",
   "name": "Nebula Fracture",
-  "description": "A fractured glass sheet revealing a volumetric nebula behind it.",
+  "description": "A premium cinematic volumetric nebula shader with deep space stellar clouds and a twinkling star field.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
+    "background",
     "nebula",
-    "fracture",
-    "background"
+    "space",
+    "premium"
   ],
   "tech_stack": [
     "React",
@@ -21,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/nebula-fracture-hero/index.jsx",
-  "created_at": "2026-07-26T16:36:07.196Z",
+  "created_at": "2026-07-26T17:14:20.578Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-hero/thumbnail.svg"
 }
