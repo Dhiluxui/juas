@@ -1,13 +1,13 @@
 {
   "slug": "ethereal-plasma-hero",
-  "name": "Ethereal Plasma",
-  "description": "A full 3D volumetric raymarched plasma cloud with deep faux sub-surface scattering.",
+  "name": "Ethereal Plasma Background",
+  "description": "A volumetric plasma cloud swirling in deep space.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
+    "ethereal",
     "plasma",
-    "volumetric",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/ethereal-plasma-hero/index.jsx",
-  "created_at": "2026-07-26T16:01:27.860Z",
+  "created_at": "2026-07-26T16:30:50.480Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-hero/thumbnail.svg"
 }
