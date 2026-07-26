@@ -1,14 +1,14 @@
 {
   "slug": "nebula-fracture-v2-hero",
   "name": "Nebula Fracture V2",
-  "description": "A darker, jagged version of the nebula fracture, featuring deep crimson dark matter.",
+  "description": "An enhanced version of the fractured nebula with crimson styling.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
     "nebula",
     "fracture",
-    "dark",
+    "v2",
     "background"
   ],
   "tech_stack": [
@@ -22,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-v2-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/nebula-fracture-v2-hero/index.jsx",
-  "created_at": "2026-07-26T16:04:02.897Z",
+  "created_at": "2026-07-26T16:21:49.598Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/nebula-fracture-v2-hero/thumbnail.svg"
 }
