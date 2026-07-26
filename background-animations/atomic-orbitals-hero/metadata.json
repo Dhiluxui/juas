@@ -1,7 +1,7 @@
 {
   "slug": "atomic-orbitals-hero",
   "name": "Atomic Orbitals",
-  "description": "A 3D representation of quantum atomic orbitals intersecting in space.",
+  "description": "Quantum torus intersections simulating atomic orbitals.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/atomic-orbitals-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/atomic-orbitals-hero/index.jsx",
-  "created_at": "2026-07-26T15:59:23.800Z",
+  "created_at": "2026-07-26T16:14:24.235Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/atomic-orbitals-hero/thumbnail.svg"
 }
