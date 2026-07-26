@@ -1,1 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#020301"/><ellipse cx="200" cy="200" rx="150" ry="130" fill="url(#grad1)"/><radialGradient id="grad1" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#1ecc66"/><stop offset="100%" stop-color="#e633cc" stop-opacity="0.5"/></radialGradient></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="#000000"/></svg>
