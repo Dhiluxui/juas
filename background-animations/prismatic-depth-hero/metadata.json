@@ -1,7 +1,7 @@
 {
   "slug": "prismatic-depth-hero",
   "name": "Prismatic Depth",
-  "description": "A raymarched scene with chromatic dispersion and depth effects.",
+  "description": "A raymarched scene featuring deep chromatic dispersion and refractive prisms.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-depth-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/prismatic-depth-hero/index.jsx",
-  "created_at": "2026-07-26T16:17:34.000Z",
+  "created_at": "2026-07-26T16:30:54.061Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-depth-hero/thumbnail.svg"
 }
