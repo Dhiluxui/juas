@@ -1,13 +1,14 @@
 {
   "slug": "crystalline-light-refraction-hero",
   "name": "Crystalline Light Refraction",
-  "description": "A massive crystal cluster showcasing realistic chromatic dispersion and index-of-refraction math.",
+  "description": "Complex crystalline geometry refracting environmental light.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
+    "crystalline",
+    "light",
     "refraction",
-    "crystal",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/crystalline-light-refraction-hero/index.jsx",
-  "created_at": "2026-07-26T16:01:47.765Z",
+  "created_at": "2026-07-26T16:19:22.294Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/thumbnail.svg"
 }
