@@ -1,7 +1,7 @@
 {
   "slug": "hyper-silk-hero",
   "name": "Hyper Silk",
-  "description": "A smooth, undulating fabric surface with iridescent scattering.",
+  "description": "Iridescent silk surface waving in the wind.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/hyper-silk-hero/index.jsx",
-  "created_at": "2026-07-26T16:02:52.041Z",
+  "created_at": "2026-07-26T16:19:30.064Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/thumbnail.svg"
 }
