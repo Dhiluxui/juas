@@ -1,13 +1,13 @@
 {
   "slug": "golden-kifs-hero",
   "name": "Golden KIFS",
-  "description": "A hyper-polished golden fractal folding system.",
+  "description": "A highly intricate fractal structure rendered as solid gold.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "fractal",
-    "gold",
+    "golden",
+    "kifs",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/golden-kifs-hero/index.jsx",
-  "created_at": "2026-07-26T16:16:03.909Z",
+  "created_at": "2026-07-26T16:29:42.205Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/thumbnail.svg"
 }
