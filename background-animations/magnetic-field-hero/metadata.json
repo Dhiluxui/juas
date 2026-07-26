@@ -4,23 +4,41 @@
   "description": "A glowing representation of magnetic flux lines in space.",
   "category": "Background Animations",
   "tags": [
-    "shader",
-    "webgl",
-    "magnetic",
-    "field",
-    "background"
+    "React",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient",
+    "Magnetic"
   ],
   "tech_stack": [
     "React",
     "WebGL",
     "GLSL",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient",
+    "Magnetic"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/magnetic-field-hero/index.jsx",
-  "created_at": "2026-07-26T16:31:57.230Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/thumbnail.svg"
+  "created_at": "2026-07-26T16:50:06.990Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/video.webm"
 }
