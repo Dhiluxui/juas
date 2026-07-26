@@ -1,0 +1,26 @@
+{
+  "slug": "bismuth-labyrinth-hero",
+  "name": "Bismuth Labyrinth",
+  "description": "A mesmerizing bismuth labyrinth featuring intricate iridescence and edge highlighting.",
+  "category": "Background Animations",
+  "tags": [
+    "shader",
+    "webgl",
+    "bismuth",
+    "iridescence",
+    "background"
+  ],
+  "tech_stack": [
+    "React",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/bismuth-labyrinth-hero/index.jsx",
+  "created_at": "2026-07-26T15:58:32.018Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/bismuth-labyrinth-hero/thumbnail.svg"
+}
