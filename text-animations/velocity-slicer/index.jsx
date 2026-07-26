@@ -112,3 +112,12 @@ export const VelocitySlicer: React.FC<VelocitySlicerProps> = ({
     </div>
   );
 };
+
+// Default export wrapper to render the component in the Juas.dev environment
+export default function App() {
+  return (
+    <div className="w-screen h-screen">
+      <VelocitySlicer text="VELOCITY" />
+    </div>
+  );
+}
