@@ -1,14 +1,15 @@
 {
   "slug": "ethereal-plasma-background-hero",
   "name": "Ethereal Plasma Background",
-  "description": "A volumetric plasma cloud simulation using raymarching.",
+  "description": "A premium, smooth glass-morphism liquid gradient plasma with deep cinematic color palettes.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "plasma",
-    "cloud",
-    "background"
+    "background",
+    "gradient",
+    "premium",
+    "liquid"
   ],
   "tech_stack": [
     "React",
@@ -21,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-background-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/ethereal-plasma-background-hero/index.jsx",
-  "created_at": "2026-07-26T16:17:53.909Z",
+  "created_at": "2026-07-26T17:12:28.791Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-background-hero/thumbnail.svg"
 }
