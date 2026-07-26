@@ -1,13 +1,13 @@
 {
   "slug": "quantum-foam-hero",
   "name": "Quantum Foam",
-  "description": "A 3D exploration of quantum foam using raymarched gyroid functions.",
+  "description": "A dynamic quantum foam visualization with smooth raymarching.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
     "quantum",
-    "gyroid",
+    "foam",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-foam-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-foam-hero/index.jsx",
-  "created_at": "2026-07-26T16:12:39.651Z",
+  "created_at": "2026-07-26T16:27:02.689Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-foam-hero/thumbnail.svg"
 }
