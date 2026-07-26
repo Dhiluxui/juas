@@ -1,14 +1,14 @@
 {
   "slug": "prismatic-liquid-topography-hero",
   "name": "Prismatic Liquid Topography",
-  "description": "A flowing topography that mathematically simulates the caustic lighting and colors of a prismatic liquid.",
+  "description": "Prismatic liquid flowing over a topographic heightmap.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
     "prismatic",
-    "liquid",
     "topography",
+    "liquid",
     "background"
   ],
   "tech_stack": [
@@ -22,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-liquid-topography-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/prismatic-liquid-topography-hero/index.jsx",
-  "created_at": "2026-07-26T16:01:40.613Z",
+  "created_at": "2026-07-26T16:17:57.668Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-liquid-topography-hero/thumbnail.svg"
 }
