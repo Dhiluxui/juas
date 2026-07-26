@@ -1,13 +1,13 @@
 {
   "slug": "prismatic-depth-hero",
   "name": "Prismatic Depth",
-  "description": "An infinite geometric depth with prismatic chromatic dispersion and reflection.",
+  "description": "A raymarched scene with chromatic dispersion and depth effects.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "prism",
-    "dispersion",
+    "prismatic",
+    "depth",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-depth-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/prismatic-depth-hero/index.jsx",
-  "created_at": "2026-07-26T16:00:33.395Z",
+  "created_at": "2026-07-26T16:17:34.000Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/prismatic-depth-hero/thumbnail.svg"
 }
