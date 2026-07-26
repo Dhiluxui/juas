@@ -1,42 +1,27 @@
 {
   "slug": "golden-kifs-hero",
   "name": "Golden KIFS",
-  "description": "A highly intricate fractal structure rendered as solid gold.",
+  "description": "A highly polished, premium, cinematic abstract golden fractal folding shader with smooth ambient occlusion and elegant motion.",
   "category": "Background Animations",
   "tags": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS",
-    "TypeScript",
-    "Inline Styles",
-    "Canvas API",
-    "requestAnimationFrame",
-    "useEffect",
-    "useRef",
-    "Mouse Tracking",
-    "Gradient"
+    "shader",
+    "webgl",
+    "background",
+    "gold",
+    "fractal",
+    "premium"
   ],
   "tech_stack": [
     "React",
     "WebGL",
     "GLSL",
-    "Tailwind CSS",
-    "TypeScript",
-    "Inline Styles",
-    "Canvas API",
-    "requestAnimationFrame",
-    "useEffect",
-    "useRef",
-    "Mouse Tracking",
-    "Gradient"
+    "Tailwind CSS"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/golden-kifs-hero/index.jsx",
-  "created_at": "2026-07-26T16:53:21.737Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/thumbnail.png",
-  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/video.webm"
+  "created_at": "2026-07-26T17:11:36.569Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/thumbnail.svg"
 }
