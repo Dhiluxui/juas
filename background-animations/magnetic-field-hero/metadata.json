@@ -1,7 +1,7 @@
 {
   "slug": "magnetic-field-hero",
   "name": "Magnetic Field",
-  "description": "A raymarched field of pulsing magnetic flux lines.",
+  "description": "Pulsing magnetic flux lines forming a field simulation.",
   "category": "Background Animations",
   "tags": [
     "shader",
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/magnetic-field-hero/index.jsx",
-  "created_at": "2026-07-26T15:59:31.066Z",
+  "created_at": "2026-07-26T16:14:33.016Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/magnetic-field-hero/thumbnail.svg"
 }
