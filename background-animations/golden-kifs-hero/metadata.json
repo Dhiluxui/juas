@@ -1,12 +1,11 @@
 {
   "slug": "golden-kifs-hero",
   "name": "Golden KIFS",
-  "description": "A highly structured, hyper-polished golden cosmic mandala fractal.",
+  "description": "A hyper-polished golden fractal folding system.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "kifs",
     "fractal",
     "gold",
     "background"
@@ -22,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/golden-kifs-hero/index.jsx",
-  "created_at": "2026-07-26T16:00:29.618Z",
+  "created_at": "2026-07-26T16:16:03.909Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/golden-kifs-hero/thumbnail.svg"
 }
