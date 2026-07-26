@@ -1,0 +1,26 @@
+{
+  "slug": "quantum-foam-hero",
+  "name": "Quantum Foam",
+  "description": "A multi-layered 3D gyroid structure creating a dense, volumetric quantum foam effect with glowing edges and parallax.",
+  "category": "Background Animations",
+  "tags": [
+    "shader",
+    "webgl",
+    "gyroid",
+    "quantum",
+    "background"
+  ],
+  "tech_stack": [
+    "React",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-foam-hero/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-foam-hero/index.jsx",
+  "created_at": "2026-07-26T15:57:54.249Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-foam-hero/thumbnail.svg"
+}
