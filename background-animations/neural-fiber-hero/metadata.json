@@ -1,13 +1,13 @@
 {
   "slug": "neural-fiber-hero",
   "name": "Neural Fiber",
-  "description": "A web of pulsing neural network fibers stretching infinitely.",
+  "description": "A volumetric network of glowing neural fibers.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
     "neural",
-    "network",
+    "fiber",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-fiber-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/neural-fiber-hero/index.jsx",
-  "created_at": "2026-07-26T16:02:39.963Z",
+  "created_at": "2026-07-26T16:19:26.170Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-fiber-hero/thumbnail.svg"
 }
