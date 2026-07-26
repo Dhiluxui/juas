@@ -1,15 +1,15 @@
 {
   "slug": "crystalline-light-refraction-hero",
   "name": "Crystalline Light Refraction",
-  "description": "A rotating cluster of giant crystals casting refracted light and chromatic dispersion.",
+  "description": "A stunning, premium simulated physical glass refraction shader with chromatic dispersion and smooth environmental lighting.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "crystalline",
-    "light",
-    "refraction",
-    "background"
+    "background",
+    "crystal",
+    "glass",
+    "premium"
   ],
   "tech_stack": [
     "React",
@@ -22,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/crystalline-light-refraction-hero/index.jsx",
-  "created_at": "2026-07-26T16:33:57.538Z",
+  "created_at": "2026-07-26T17:13:22.148Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/crystalline-light-refraction-hero/thumbnail.svg"
 }
