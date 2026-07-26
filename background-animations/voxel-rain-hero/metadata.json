@@ -1,13 +1,13 @@
 {
   "slug": "voxel-rain-hero",
   "name": "Voxel Rain",
-  "description": "A cyberpunk-style rain of neon volumetric voxels that react to the mouse.",
+  "description": "A cybernetic cityscape with falling neon voxels.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
     "voxel",
-    "rain",
+    "cyberpunk",
     "background"
   ],
   "tech_stack": [
@@ -21,6 +21,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/voxel-rain-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/voxel-rain-hero/index.jsx",
-  "created_at": "2026-07-26T16:00:25.902Z",
+  "created_at": "2026-07-26T16:15:59.517Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/voxel-rain-hero/thumbnail.svg"
 }
