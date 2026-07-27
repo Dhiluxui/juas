@@ -1,12 +1,15 @@
 {
   "slug": "liquid-prism-hero",
   "name": "Liquid Prism",
-  "description": "Liquid Prism background animation",
+  "description": "A stunning iridescent liquid prism shader featuring chromatic dispersion and smooth domain warping.",
   "category": "Background Animations",
   "tags": [
     "shader",
     "webgl",
-    "background"
+    "background",
+    "prism",
+    "liquid",
+    "premium"
   ],
   "tech_stack": [
     "React",
@@ -19,6 +22,6 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-prism-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/liquid-prism-hero/index.jsx",
-  "created_at": "2026-07-26T17:04:53.610Z",
+  "created_at": "2026-07-27T05:42:17.373Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-prism-hero/thumbnail.svg"
 }
