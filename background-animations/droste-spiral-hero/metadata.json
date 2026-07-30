@@ -3,13 +3,35 @@
   "name": "Droste Spiral",
   "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
+  ],
+  "tech_stack": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/droste-spiral-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/droste-spiral-hero/index.jsx",
-  "created_at": "2026-07-30T07:11:20.924Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/droste-spiral-hero/thumbnail.svg"
+  "created_at": "2026-07-30T09:30:52.630Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/droste-spiral-hero/thumbnail.png"
 }
