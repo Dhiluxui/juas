@@ -1,24 +1,15 @@
 {
   "slug": "data-veins-hero",
   "name": "Data Veins",
-  "description": "Data Veins background animation",
+  "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [
-    "shader",
-    "webgl",
-    "background"
-  ],
-  "tech_stack": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/data-veins-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/data-veins-hero/index.jsx",
-  "created_at": "2026-07-26T17:03:00.653Z",
+  "created_at": "2026-07-30T07:11:11.766Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/data-veins-hero/thumbnail.svg"
 }
