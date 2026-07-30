@@ -1,243 +1,171 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
+const AuroraNeonFlow = ({
   className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+  color1 = [0.9, 0.1, 0.4],
+  color2 = [0.0, 0.6, 0.8]
+}) => {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef([0, 0]);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      // Convert screen coordinates to canvas-relative coordinates, flipping Y for WebGL
+      if (canvasRef.current) {
+        const rect = canvasRef.current.getBoundingClientRect();
+        mouseRef.current = [
+          e.clientX - rect.left,
+          rect.height - (e.clientY - rect.top) 
+        ];
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const gl = canvas.getContext('webgl');
+    if (!gl) {
+      console.error("WebGL not supported");
+      return;
+    }
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    const vertexShaderSource = `
+      attribute vec2 position; 
+      void main() { 
+        gl_Position = vec4(position, 0.0, 1.0); 
+      }`;
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
+    const fragmentShaderSource = `
+      precision highp float;
+      uniform vec2 uResolution;
+      uniform float uTime;
+      uniform vec2 uMouse;
+      uniform vec3 uColor1;
+      uniform vec3 uColor2;
+
+      void main() {
+        vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
+        vec2 m = uMouse.xy / uResolution.xy;
+        if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5); // Default to center if no mouse input
+        m = (m - 0.5) * 2.0;
+        uv += m * 0.05; 
+
+        float t = uTime * 0.4;
+        vec3 col = vec3(0.01, 0.0, 0.05);
+
+        vec2 p = uv;
+        p.x += sin(p.y * 1.5 + t * 0.8) * 0.2;
+        p.y += cos(p.x * 2.0 + t * 0.6) * 0.2;
+        
+        float flow1 = smoothstep(-1.0, 1.0, sin(p.x * 3.0 + t) * cos(p.y * 2.0 - t));
+        col = mix(col, vec3(0.2, 0.0, 0.5), flow1 * 0.6);
+        
+        float flow2 = smoothstep(-1.0, 1.0, sin(p.y * 2.5 - t * 1.2) * cos(p.x * 1.5 + t));
+        col = mix(col, vec3(0.0, 0.15, 0.5), flow2 * 0.5);
+
+        float horizonY = uv.y + sin(uv.x * 1.5 - t * 0.5) * 0.15 + cos(uv.x * 3.0 + t) * 0.05;
+        float streak1 = exp(-abs(horizonY) * 6.0);
+        float streak2 = exp(-abs(horizonY + 0.05 * sin(uv.x * 5.0 + t * 2.0)) * 18.0);
+        float colorMix = smoothstep(-1.0, 1.0, uv.x + sin(t)*0.2);
+        
+        vec3 streakColor = mix(uColor1, uColor2, colorMix);
+        vec3 coreColor = mix(vec3(1.0, 0.7, 0.2), vec3(0.6, 0.9, 1.0), colorMix);
+        
+        col += streakColor * streak1 * 0.9;
+        col += coreColor * streak2 * 1.5;
+
+        float flareMask = exp(-abs(horizonY) * 2.5);
+        float flares = sin(uv.x * 8.0 + t * 1.5) * cos(uv.x * 4.0 - t);
+        flares = smoothstep(0.5, 1.0, flares) * flareMask;
+        col += mix(vec3(0.8, 0.0, 0.9), vec3(0.0, 0.8, 1.0), colorMix) * flares * 0.8;
+
+        float vignette = 1.0 - dot(uv, uv) * 0.15;
+        col *= vignette;
+        col = pow(col, vec3(1.2));
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `;
+
+    const createShader = (gl, type, source) => {
+      const s = gl.createShader(type);
+      gl.shaderSource(s, source);
+      gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error("Shader compile error:", gl.getShaderInfoLog(s));
+        gl.deleteShader(s);
+        return null;
+      }
+      return s;
+    };
 
     const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
+    const vShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    
+    gl.attachShader(program, vShader);
+    gl.attachShader(program, fShader);
     gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
     gl.useProgram(program);
 
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
+    const pos = gl.getAttribLocation(program, "position");
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
+    const timeLoc = gl.getUniformLocation(program, "uTime");
+    const resLoc = gl.getUniformLocation(program, "uResolution");
+    const mouseLoc = gl.getUniformLocation(program, "uMouse");
+    const col1Loc = gl.getUniformLocation(program, "uColor1");
+    const col2Loc = gl.getUniformLocation(program, "uColor2");
 
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
+    let frameId;
+    const render = (t) => {
+      // Resize canvas if needed to match display size
+      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
       }
-    };
-
-    const render = (time: number) => {
-      resize();
-
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
-
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
       
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform1f(timeLoc, t * 0.001);
+      gl.uniform2f(resLoc, canvas.width, canvas.height);
+      gl.uniform2f(mouseLoc, mouseRef.current[0], mouseRef.current[1]);
+      gl.uniform3fv(col1Loc, color1);
+      gl.uniform3fv(col2Loc, color2);
       
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      frameId = requestAnimationFrame(render);
     };
-
-    animationFrameId = requestAnimationFrame(render);
-
+    
+    frameId = requestAnimationFrame(render);
+    
+    // Cleanup on unmount
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(frameId);
       gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
+      gl.deleteShader(vShader);
+      gl.deleteShader(fShader);
+      gl.deleteBuffer(buffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [color1, color2]); // Re-initialize if colors change drastically, though uniforms update dynamically
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
-  );
-}
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
-    }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
-        vec2 m = (uMouse.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
-        
-        float distToMouse = length(uv - m);
-        float lens = exp(-distToMouse * 3.0) * 0.5;
-        uv -= (m - uv) * lens;
-
-        vec3 col = vec3(0.0);
-        float t = uTime * 0.4;
-        
-        for(int j = 0; j < 4; j++) {
-            float i = float(j);
-            vec2 p = uv;
-            p += sin(p.yx * 2.0 + t + i) * 0.3;
-            p += cos(p.xy * 1.5 + t * 0.5) * 0.4;
-            
-            float r = 0.5 + 0.5 * sin(p.x * 3.0 + t);
-            float g = 0.5 + 0.5 * cos(p.y * 3.0 + t);
-            float b = 0.5 + 0.5 * sin((p.x + p.y) * 2.0);
-            
-            col += vec3(r, g, b) * 0.15;
-        }
-
-        float vignette = 1.0 - length(uv) * 0.5;
-        col *= vignette;
-        
-        col = pow(col, vec3(1.2));
-        
-        gl_FragColor = vec4(col, 1.0);
-    }
-  `
+  // Fixed className template literal syntax
+  return <canvas ref={canvasRef} className={`w-full h-full block ${className}`} />;
 };
 
-export const EtherealLiquidPrismHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#030303] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+export default function App() {
+  return (
+    <div className="relative w-full h-screen overflow-hidden bg-[#050505]">
+      <AuroraNeonFlow 
+        color1={[0.9, 0.2, 0.8]} 
+        color2={[0.1, 0.6, 1.0]} 
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(3, 3, 3, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+  );
+}
