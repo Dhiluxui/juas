@@ -1,6 +1,7 @@
 import React from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+// Helper to compile a WebGL shader
+function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,7 +14,8 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
+// Helper to convert hex colors to rgb for WebGL uniforms
+function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [
     parseInt(result[1], 16) / 255,
@@ -30,8 +32,8 @@ function ShaderBackground({
   color1 = '#ff0000',
   color2 = '#0000ff',
   ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+}) {
+  const canvasRef = React.useRef(null);
   const mouseRef = React.useRef({ x: 0, y: 0 });
 
   React.useEffect(() => {
@@ -55,6 +57,7 @@ function ShaderBackground({
     
     gl.useProgram(program);
 
+    // Full screen triangle strip
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
@@ -97,7 +100,7 @@ function ShaderBackground({
     const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
     const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
@@ -106,7 +109,7 @@ function ShaderBackground({
     window.addEventListener('mousemove', handleMouseMove);
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
     const resize = () => {
@@ -120,7 +123,7 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
@@ -194,129 +197,128 @@ const shaderData = {
     uniform float uTime;
     uniform vec2 uMouse;
 
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
+    mat2 rot(float a) { 
+        return mat2(cos(a), -sin(a), sin(a), cos(a)); 
+    }
 
-    // Smooth min to fuse the tubes together organically
     float smin(float a, float b, float k) {
         float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
         return mix(b, a, h) - k * h * (1.0 - h);
     }
 
-    // Map a complex bundle of flowing neon tubes
     float map(vec3 p) {
-        float t = uTime * 0.5;
+        float t = uTime * 0.8;
         float d = 100.0;
-        
-        // Generate 6 interlocking cylinders
-        for(int i = 0; i < 6; i++) {
+        p.x += 1.8;
+        p.y += 2.0;
+        for(int i = 0; i < 4; i++) {
             vec3 q = p;
             float fi = float(i);
-            
-            // Offset and snake each tube through space using sine waves
-            q.x += sin(q.z * 0.5 + t + fi * 2.0) * 1.5;
-            q.y += cos(q.z * 0.4 - t * 0.8 + fi * 1.5) * 1.5;
-            
-            // Basic cylinder shape oriented along the Z axis
-            float tube = length(q.xy) - 0.25;
-            
-            // Softly fuse the glass tubes when they intersect
-            d = smin(d, tube, 0.6);
+            q.x += sin(q.y * 0.5 + t * 1.2 + fi * 2.1) * 1.5;
+            q.z += cos(q.y * 0.4 - t * 1.1 + fi * 1.8) * 1.5;
+            q.x += sin(q.y * 2.5 - t * 2.5 + fi) * 0.2;
+            float thickness = 1.2 - (q.y * 0.20);
+            thickness = max(thickness, 0.02);
+            float flameTongue = length(q.xz) - thickness;
+            d = smin(d, flameTongue, 0.8);
         }
-        
-        return d;
+        return d * 0.5;
     }
 
     vec3 getNormal(vec3 p) {
         vec2 e = vec2(0.01, 0.0);
         return normalize(vec3(
-            map(p+e.xyy) - map(p-e.xyy), 
-            map(p+e.yxy) - map(p-e.yxy), 
+            map(p+e.xyy) - map(p-e.xyy),
+            map(p+e.yxy) - map(p-e.yxy),
             map(p+e.yyx) - map(p-e.yyx)
         ));
     }
 
+    float hash(vec2 p) {
+        vec3 p3  = fract(vec3(p.xyx) * .1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+
     void main() {
         vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Flying forward alongside the massive tube bundle
-        vec3 ro = vec3(0.0, 0.0, -5.0 + uTime * 2.5); 
+        vec3 ro = vec3(0.0, 0.0, -8.0);
         vec3 rd = normalize(vec3(uv, 1.0));
-        
         vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
+        if(length(uMouse) > 10.0) {
+            ro.yz *= rot((m.y - 0.5)*1.5);
+            ro.xz *= rot((m.x - 0.5)*1.5);
         }
-        
-        // Camera roll
-        rd.xy *= rot(sin(uTime * 0.2) * 0.3);
-        
+        rd.xy *= rot(-0.6);
         float dTotal = 0.0;
         vec3 p;
         float glow = 0.0;
-        
-        // Raymarch the geometry
         for(int i = 0; i < 90; i++) {
             p = ro + rd * dTotal;
             float d = map(p);
-            
-            // Volumetric neon light leaking into the surrounding void
-            glow += 0.005 / (0.01 + abs(d)) * exp(-dTotal * 0.15);
-            
-            if(d < 0.005 || dTotal > 20.0) break;
-            
-            // Step conservatively due to smooth min intersections
-            dTotal += d * 0.8; 
+            glow += 0.015 / (0.01 + abs(d)) * exp(-dTotal * 0.05);
+            if(d < 0.005 || dTotal > 30.0) break;
+            dTotal += d * 0.9;
         }
-        
-        vec3 col = vec3(0.01, 0.0, 0.02); // Void space
-        
-        if (dTotal < 20.0) {
+        vec3 col = vec3(0.02, 0.00, 0.06);
+        float starVal = hash(floor(rd.xy * 250.0 + rd.z * 100.0));
+        if (starVal > 0.995) {
+            float brightness = sin(uTime * 4.0 + starVal * 200.0) * 0.5 + 0.5;
+            col += vec3(1.0, 0.7, 0.9) * brightness * 1.5;
+        }
+        float dust = sin(rd.x * 20.0 + uTime) * sin(rd.y * 20.0 - uTime);
+        col += vec3(0.8, 0.3, 0.9) * smoothstep(0.8, 1.0, dust) * 0.1;
+        if (dTotal < 30.0) {
             vec3 n = getNormal(p);
-            vec3 l = normalize(vec3(1.0, 1.0, -1.0));
-            float diff = max(dot(n, l), 0.0);
-            
-            // Extremely glossy black glass / fluid material
-            col = vec3(0.02) * diff;
-            
-            vec3 ref = reflect(rd, n);
-            float spec = pow(max(dot(ref, l), 0.0), 32.0);
-            col += vec3(1.0) * spec * 0.8; // Sharp specular highlights
-            
-            // NEON FLUX LOGIC:
-            // Calculate a rapidly flowing pulse of energy traveling down the tubes
-            float pulse = sin(p.z * 2.0 - uTime * 6.0) * 0.5 + 0.5;
-            
-            // Shift the color based on world position
-            vec3 neonColor = mix(vec3(1.0, 0.0, 0.5), vec3(0.0, 1.0, 0.8), sin(p.z * 0.1) * 0.5 + 0.5);
-            
-            // Apply the neon energy to the edges (Fresnel) to make the glass appear hollow and filled with light
-            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-            col += neonColor * fresnel * pulse * 4.0; // Overdriven glowing edges
+            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 2.0);
+            float h = p.y + 2.0;
+            vec3 c_white  = vec3(1.0, 1.0, 1.0);
+            vec3 c_yellow = vec3(1.0, 0.9, 0.4);
+            vec3 c_pink   = vec3(1.0, 0.15, 0.5);
+            vec3 c_purple = vec3(0.4, 0.0, 0.8);
+            vec3 c_dark   = vec3(0.04, 0.0, 0.1);
+            vec3 objCol = mix(c_white, c_yellow, smoothstep(-3.5, -1.5, h));
+            objCol = mix(objCol, c_pink, smoothstep(-1.5, 1.5, h));
+            objCol = mix(objCol, c_purple, smoothstep(1.5, 5.0, h));
+            objCol = mix(objCol, c_dark, smoothstep(5.0, 8.0, h));
+            col = mix(col, objCol * (0.3 + fresnel * 2.5), 1.0);
+            float pulse = sin(h * 3.0 - uTime * 4.0) * 0.5 + 0.5;
+            col += objCol * pulse * 0.4 * fresnel;
         }
-        
-        // Add the volumetric ambient neon glow to the atmosphere
-        col += vec3(0.8, 0.0, 1.0) * glow * 0.4;
-        
-        // Distance fog
-        col = mix(col, vec3(0.01, 0.0, 0.02), smoothstep(10.0, 20.0, dTotal));
-        
-        col = pow(col, vec3(0.85)); // Gamma correction
-        col *= 1.0 - dot(uv, uv) * 0.4; // Vignette
-        
+        vec3 glowCol = mix(vec3(1.0, 0.2, 0.5), vec3(0.4, 0.0, 0.8), smoothstep(-0.5, 0.5, uv.y));
+        col += glowCol * glow * 0.18;
+        col = mix(col, vec3(0.02, 0.0, 0.06), smoothstep(20.0, 30.0, dTotal));
+        col = pow(col, vec3(0.85));
+        col *= 1.0 - dot(uv, uv) * 0.3;
         gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }
   `
 };
 
-export const NeonFluxHero = ({ className = '', children, ...props }: any) => (
+export const NeonFluxHero = ({ className = '', children, ...props }) => (
   <div className={`relative w-full h-full bg-[#010003] overflow-hidden font-sans ${className}`}>
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+      <ShaderBackground 
+        vertexShaderSource={shaderData.vertex} 
+        fragmentShaderSource={shaderData.fragment} 
+        {...props} 
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(1, 0, 3, 0.9) 100%)' }} />
+    <div 
+      className="absolute inset-0 z-[2] pointer-events-none" 
+      style={{ background: 'radial-gradient(circle at center, transparent 20%, rgba(2, 0, 6, 0.85) 100%)' }} 
+    />
     <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
       <div className="pointer-events-auto">{children}</div>
     </div>
   </div>
 );
+
+export default function App() {
+  return (
+    <div className="w-full h-screen">
+      <NeonFluxHero>
+      </NeonFluxHero>
+    </div>
+  );
+}
