@@ -3,13 +3,37 @@
   "name": "Quantum Crystal V2",
   "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
+  ],
+  "tech_stack": [
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-crystal-v2-hero/index.jsx",
-  "created_at": "2026-07-30T07:16:26.794Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/thumbnail.svg"
+  "created_at": "2026-07-30T09:26:41.900Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/thumbnail.png"
 }
