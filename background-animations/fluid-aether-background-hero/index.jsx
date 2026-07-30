@@ -1,10 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-// ============================================================================
-// Core WebGL Renderer
-// ============================================================================
-
-export function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -17,25 +13,33 @@ export function createShader(gl: WebGLRenderingContext, type: number, source: st
   return shader;
 }
 
-export interface ShaderBackgroundProps {
-  vertexShaderSource: string;
-  fragmentShaderSource: string;
-  className?: string;
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [
+    parseInt(result[1], 16) / 255,
+    parseInt(result[2], 16) / 255,
+    parseInt(result[3], 16) / 255
+  ] : [1, 1, 1];
 }
 
-export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '' }: ShaderBackgroundProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+function ShaderBackground({ 
+  vertexShaderSource, 
+  fragmentShaderSource, 
+  className = '',
+  speed = 1.0,
+  color1 = '#ff0000',
+  color2 = '#0000ff',
+  ...props
+}: any) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const mouseRef = React.useRef({ x: 0, y: 0 });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
-    }
+    if (!gl) return;
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -47,14 +51,10 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
-      return;
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
     
     gl.useProgram(program);
 
-    // Geometry
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
@@ -80,7 +80,6 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     }
 
-    // Uniforms
     const timeLocation = gl.getUniformLocation(program, 'iTime');
     const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
     const mouseLocation = gl.getUniformLocation(program, 'iMouse');
@@ -93,19 +92,20 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
     const uTimeCamel = gl.getUniformLocation(program, 'uTime');
     const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
     const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
+    
+    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
+    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
+    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
 
-    // Mouse tracking
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr; // flip Y for standard webgl
+      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Initial mouse center
     let initialSet = false;
-
     let animationFrameId: number;
     let startTime = performance.now();
 
@@ -132,18 +132,30 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      if (timeLocation !== null) gl.uniform1f(timeLocation, (time - startTime) * 0.001);
+      const t = (time - startTime) * 0.001;
+      
+      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
 
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, (time - startTime) * 0.001);
+      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
       if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
       if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
       if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
 
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, (time - startTime) * 0.001);
+      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
       if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
       if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
+      
+      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
+      if (uColor1Loc !== null) {
+        const c1 = hexToRgb(color1);
+        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
+      }
+      if (uColor2Loc !== null) {
+        const c2 = hexToRgb(color2);
+        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
+      }
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(render);
@@ -160,23 +172,23 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.deleteBuffer(positionBuffer);
       gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource]);
+  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
 
   return (
     <canvas
       ref={canvasRef}
-      className={\`w-full h-full block pointer-events-auto \${className}\`}
+      className={`w-full h-full block pointer-events-auto ${className}`}
       style={{ touchAction: 'none' }}
     />
   );
 }
 
 const shaderData = {
-  vertex: \`
+  vertex: `
     attribute vec2 position;
     void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  \`,
-  fragment: \`
+  `,
+  fragment: `
       precision highp float;
       uniform float uTime;
       uniform vec2 uResolution;
@@ -293,18 +305,13 @@ const shaderData = {
           
           gl_FragColor = vec4(col, 1.0);
       }
-  \`
+  `
 };
 
-export interface FluidAetherBackgroundHeroProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children?: React.ReactNode;
-}
-
-export const FluidAetherBackgroundHero = ({ className = '', children, ...props }: FluidAetherBackgroundHeroProps) => (
-  <div className={\`relative w-full h-full bg-[#050510] overflow-hidden font-sans \${className}\`} {...props}>
+export const FluidAetherBackgroundHero = ({ className = '', children, ...props }: any) => (
+  <div className={`relative w-full h-full bg-[#050510] overflow-hidden font-sans ${className}`} {...props}>
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} />
+      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
     </div>
     <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 0%, rgba(5, 5, 16, 0.6) 100%)' }} />
     <div className="relative z-10 w-full h-full pointer-events-none">
