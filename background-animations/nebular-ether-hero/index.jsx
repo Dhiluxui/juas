@@ -1,6 +1,6 @@
 import React from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,7 +13,7 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
+function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [
     parseInt(result[1], 16) / 255,
@@ -30,8 +30,8 @@ function ShaderBackground({
   color1 = '#ff0000',
   color2 = '#0000ff',
   ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+}) {
+  const canvasRef = React.useRef(null);
   const mouseRef = React.useRef({ x: 0, y: 0 });
 
   React.useEffect(() => {
@@ -97,7 +97,7 @@ function ShaderBackground({
     const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
     const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
@@ -106,7 +106,7 @@ function ShaderBackground({
     window.addEventListener('mousemove', handleMouseMove);
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
     const resize = () => {
@@ -120,7 +120,7 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
@@ -134,10 +134,12 @@ function ShaderBackground({
 
       const t = (time - startTime) * 0.001;
       
+      // Inject standard shadertoy-style uniforms
       if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
 
+      // Support alternative uniform names
       if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
       if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
       if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
@@ -193,67 +195,101 @@ const shaderData = {
     uniform float iTime;
     uniform vec2 iResolution;
 
-    // Rotation matrix for subtle turbulence
+    // 2D Rotation matrix
     mat2 rot(float a) {
         float s = sin(a), c = cos(a);
         return mat2(c, -s, s, c);
     }
 
-    // Spectral accumulation function
-    // We use simple waves with phase shifting to avoid heavy noise/grid artifacts
-    float map(vec2 p, float t, float phase) {
-        float d = 0.0;
-        // Accumulate layered waves for organic fluidity
-        for(float i = 1.0; i < 6.0; i++) {
-            p += vec2(sin(p.y * 0.5 + t + phase), cos(p.x * 0.5 + t + phase)) * 0.4;
-            d += sin(p.x + t) * 0.5 + 0.5;
-        }
-        return d;
-    }
-
     void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / min(iResolution.y, iResolution.x);
-        float t = iTime * 0.3;
-        
-        // Rotate coordinate space slightly
-        uv *= rot(t * 0.1);
+        vec2 uv = gl_FragCoord.xy / iResolution.xy;
+        vec2 p = uv * 2.0 - 1.0;
+        p.x *= iResolution.x / iResolution.y;
 
-        // Create R, G, B channels with distinct phase shifts
-        // This creates the "Chromatic" effect without needing actual aberration
-        float r = map(uv * 1.5, t, 0.0);
-        float g = map(uv * 1.6, t, 2.0);
-        float b = map(uv * 1.7, t, 4.0);
+        // Angle the entire composition exactly like the reference
+        p *= rot(0.65); 
+        float t = iTime * 0.15; 
 
-        // Combine channels and normalize
-        vec3 col = vec3(r, g, b) * 0.3;
+        // BASE BACKGROUND: Deep space void
+        vec3 col = vec3(0.005, 0.002, 0.04);
         
-        // Apply a deep atmospheric fade (Vignette)
-        float dist = length(uv);
-        col *= 1.0 - smoothstep(0.3, 1.2, dist);
+        // Dynamic pixel size for perfect vector-like anti-aliasing
+        float px = 3.0 / iResolution.y; 
+
+        // --- LAYER 1: Deep Purple Back Fold ---
+        float w1 = sin(p.x * 1.2 + t * 0.8) * 0.3 + cos(p.x * 0.7 - t * 0.5) * 0.2;
+        float d1 = p.y - w1 - 0.4;
         
-        // Color grading: Deep Violet to Electric Cyan
-        vec3 base = vec3(0.1, 0.05, 0.2); // Dark base
-        vec3 tint = vec3(0.2, 0.8, 1.0);   // Electric cyan
-        vec3 shift = vec3(0.9, 0.2, 0.6);  // Magenta shift
+        vec3 c1 = mix(vec3(0.01, 0.0, 0.1), vec3(0.3, 0.0, 0.7), smoothstep(-0.8, 0.0, d1));
+        c1 += vec3(0.5, 0.2, 0.8) * exp(-abs(d1) * 15.0) * 0.5; // Inner glow / Rim light
         
-        col = mix(base, mix(tint, shift, col.r), col.g + col.b);
+        float m1 = smoothstep(px, -px, d1);
+        col = mix(col, c1, m1);
+
+        // --- LAYER 2: The Hero Wave (Magenta/White Glowing Crest) ---
+        float w2 = sin(p.x * 1.5 - t * 1.1) * 0.25 + cos(p.x * 0.9 + t * 0.7) * 0.3;
+        float d2 = p.y - w2 + 0.1;
         
-        // Add a final glow boost
-        col = pow(col, vec3(0.9)) * 1.5;
+        // AFTER EFFECTS SIM: Drop Shadow cast *from* Layer 2 *onto* Layer 1
+        float shadow2 = smoothstep(-0.4, 0.2, d2); 
+        col *= mix(0.15, 1.0, shadow2); // Multiply blend mode for soft shadow
+        
+        vec3 c2 = mix(vec3(0.1, 0.0, 0.4), vec3(0.9, 0.1, 0.8), smoothstep(-0.7, 0.0, d2));
+        
+        // AFTER EFFECTS SIM: Bloom / Intense Inner Glow at the crest
+        float rim2 = exp(-abs(d2) * 18.0);
+        c2 += vec3(1.0, 0.8, 1.0) * rim2 * 1.2;
+        
+        // Stark white edge highlight for the sharp peak
+        float edgeHighlight = exp(-abs(d2) * 50.0);
+        c2 += vec3(1.0, 1.0, 1.0) * edgeHighlight;
+
+        float m2 = smoothstep(px, -px, d2);
+        col = mix(col, c2, m2);
+
+        // --- LAYER 3: Foreground Royal Blue / Purple Wave ---
+        float w3 = sin(p.x * 1.3 + t * 1.3) * 0.3 + cos(p.x * 1.1 - t * 0.6) * 0.25;
+        float d3 = p.y - w3 + 0.7;
+        
+        // AFTER EFFECTS SIM: Drop Shadow from Layer 3 onto Layer 2
+        float shadow3 = smoothstep(-0.4, 0.15, d3);
+        col *= mix(0.1, 1.0, shadow3); // Deep shadow
+        
+        vec3 c3 = mix(vec3(0.00, 0.0, 0.15), vec3(0.4, 0.2, 1.0), smoothstep(-0.6, 0.0, d3));
+        float rim3 = exp(-abs(d3) * 12.0);
+        c3 += vec3(0.7, 0.6, 1.0) * rim3 * 0.8;
+
+        float m3 = smoothstep(px, -px, d3);
+        col = mix(col, c3, m3);
+        
+        // AFTER EFFECTS SIM: Post-Processing / Color Grading
+        
+        // 1. Soft Vignette (Lens/Focus simulation)
+        float vignette = length(uv - 0.5);
+        col *= 1.0 - smoothstep(0.4, 1.2, vignette);
+        
+        // 2. S-Curve Contrast (Levels/Curves adjustment for depth)
+        col = col * col * (3.0 - 2.0 * col);
+        
+        // 3. Gamma Correction (Exposure boost making neons incredibly vibrant)
+        col = pow(col, vec3(0.85));
 
         gl_FragColor = vec4(col, 1.0);
     }
   `
 };
 
-export const NebularEtherHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#050505] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(5, 5, 5, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
+export const NebularEtherHero = ({ className = '' }) => (
+  <div className={`relative w-full h-full bg-[#050505] overflow-hidden ${className}`}>
+    <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} />
   </div>
 );
+
+// Main App export to render the pure background
+export default function App() {
+  return (
+    <div className="w-screen h-screen">
+      <NebularEtherHero />
+    </div>
+  );
+}
