@@ -197,10 +197,12 @@ const shaderData = {
     mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
 
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+    
     float noise(vec2 p) {
         vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
         return mix(mix(hash(i), hash(i+vec2(1.0, 0.0)), f.x), mix(hash(i+vec2(0.0, 1.0)), hash(i+vec2(1.0, 1.0)), f.x), f.y);
     }
+    
     float fbm(vec2 p) {
         float f = 0.0, a = 0.5;
         mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
@@ -213,48 +215,81 @@ const shaderData = {
         // A cavernous floor and walls
         float terrain = p.y + 4.0;
         
-        // Displace the floor heavily with FBM
-        // We use moving 2D noise to simulate ripples on the water surface casting light down
-        float surfaceLight = fbm(p.xz * 0.5 - uTime);
+        // Add floor displacement
+        terrain += fbm(p.xz * 0.5) * 2.0;
         
-        // Only illuminate the water volume if there is open space above it (simulated by Y height)
-        if (p.y > -2.0) {
-            causticsLight += pow(surfaceLight, 3.0) * 0.01 * exp(-dTotal * 0.05);
+        return terrain;
+    }
+
+    // Function to calculate surface normals
+    vec3 getNormal(vec3 p) {
+        vec2 e = vec2(0.01, 0.0);
+        return normalize(vec3(
+            map(p + e.xyy) - map(p - e.xyy),
+            map(p + e.yxy) - map(p - e.yxy),
+            map(p + e.yyx) - map(p - e.yyx)
+        ));
+    }
+
+    void main() {
+        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
+        
+        // Camera setup (slowly moving forward)
+        vec3 ro = vec3(0.0, 0.0, uTime);
+        vec3 rd = normalize(vec3(uv, 1.0));
+        
+        float dTotal = 0.0;
+        float d;
+        vec3 p;
+        float causticsLight = 0.0;
+        
+        // Raymarching loop
+        for (int i = 0; i < 80; i++) {
+            p = ro + rd * dTotal;
+            d = map(p);
+            
+            // We use moving 2D noise to simulate ripples on the water surface casting light down
+            float surfaceLight = fbm(p.xz * 0.5 - uTime);
+            
+            // Only illuminate the water volume if there is open space above it (simulated by Y height)
+            if (p.y > -2.0) {
+                causticsLight += pow(max(surfaceLight, 0.0), 3.0) * 0.01 * exp(-dTotal * 0.05);
+            }
+            
+            if (d < 0.01 || dTotal > 40.0) break;
+            dTotal += d;
         }
         
-        if(d < 0.01 || dTotal > 40.0) break;
-        dTotal += d;
+        vec3 col = vec3(0.0); // Murky water
+        
+        if (dTotal < 40.0) {
+            vec3 n = getNormal(p);
+            
+            // Dark abyssal rock
+            col = vec3(0.01, 0.02, 0.03);
+            
+            // Calculate light hitting the terrain from the moving surface above
+            vec3 l = normalize(vec3(0.0, 1.0, 0.0)); // Light straight down
+            float diff = max(dot(n, l), 0.0);
+            
+            float surfaceCaustic = pow(max(fbm(p.xz * 1.5 - uTime * 2.0), 0.0), 3.0);
+            
+            // Paint the dancing light ripples onto the rock
+            col += vec3(0.0, 0.8, 1.0) * diff * surfaceCaustic * 2.0;
+        }
+        
+        // Add the intense volumetric light beams cutting through the murky water
+        col += vec3(0.0, 0.6, 0.9) * causticsLight;
+        
+        // Deep sea fog (water absorption)
+        // Red light absorbs fast, leaving deep blues and blacks
+        vec3 fogColor = vec3(0.0, 0.05, 0.1); 
+        col = mix(col, fogColor, smoothstep(10.0, 40.0, dTotal));
+        
+        col = pow(col, vec3(0.85)); // Gamma
+        
+        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
     }
-    
-    vec3 col = vec3(0.0); // Murky water
-    
-    if (dTotal < 40.0) {
-        vec3 n = getNormal(p);
-        
-        // Dark abyssal rock
-        col = vec3(0.01, 0.02, 0.03);
-        
-        // Calculate light hitting the terrain from the moving surface above
-        vec3 l = normalize(vec3(0.0, 1.0, 0.0)); // Light straight down
-        float diff = max(dot(n, l), 0.0);
-        
-        float surfaceCaustic = pow(fbm(p.xz * 1.5 - uTime * 2.0), 3.0);
-        
-        // Paint the dancing light ripples onto the rock
-        col += vec3(0.0, 0.8, 1.0) * diff * surfaceCaustic * 2.0;
-    }
-    
-    // Add the intense volumetric light beams cutting through the murky water
-    col += vec3(0.0, 0.6, 0.9) * causticsLight;
-    
-    // Deep sea fog (water absorption)
-    // Red light absorbs fast, leaving deep blues and blacks
-    vec3 fogColor = vec3(0.0, 0.05, 0.1); 
-    col = mix(col, fogColor, smoothstep(10.0, 40.0, dTotal));
-    
-    col = pow(col, vec3(0.85)); // Gamma
-    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-}
 `
 };
 
