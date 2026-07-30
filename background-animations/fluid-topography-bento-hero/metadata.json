@@ -1,24 +1,15 @@
 {
   "slug": "fluid-topography-bento-hero",
   "name": "Fluid Topography Bento",
-  "description": "Fluid Topography Bento background animation",
+  "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [
-    "shader",
-    "webgl",
-    "background"
-  ],
-  "tech_stack": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-topography-bento-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/fluid-topography-bento-hero/index.jsx",
-  "created_at": "2026-07-26T17:03:40.038Z",
+  "created_at": "2026-07-30T07:12:06.689Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-topography-bento-hero/thumbnail.svg"
 }
