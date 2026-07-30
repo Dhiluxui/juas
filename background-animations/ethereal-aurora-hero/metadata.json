@@ -13,7 +13,12 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Touch Events",
+    "3D Transform",
+    "Noise / Randomness",
+    "Glitch Effect"
   ],
   "tech_stack": [
     "React",
@@ -25,13 +30,19 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Touch Events",
+    "3D Transform",
+    "Noise / Randomness",
+    "Glitch Effect"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-aurora-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/ethereal-aurora-hero/index.jsx",
-  "created_at": "2026-07-30T09:32:28.472Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-aurora-hero/thumbnail.png"
+  "created_at": "2026-07-30T11:30:37.974Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-aurora-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-aurora-hero/video.webm"
 }
