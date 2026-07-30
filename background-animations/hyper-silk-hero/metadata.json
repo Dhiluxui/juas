@@ -1,42 +1,15 @@
 {
   "slug": "hyper-silk-hero",
   "name": "Hyper Silk",
-  "description": "An iridescent undulating silk surface rendered with WebGL.",
+  "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS",
-    "TypeScript",
-    "Inline Styles",
-    "Canvas API",
-    "requestAnimationFrame",
-    "useEffect",
-    "useRef",
-    "Mouse Tracking",
-    "Gradient"
-  ],
-  "tech_stack": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS",
-    "TypeScript",
-    "Inline Styles",
-    "Canvas API",
-    "requestAnimationFrame",
-    "useEffect",
-    "useRef",
-    "Mouse Tracking",
-    "Gradient"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/hyper-silk-hero/index.jsx",
-  "created_at": "2026-07-26T16:45:21.067Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/thumbnail.png",
-  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/video.webm"
+  "created_at": "2026-07-30T07:12:47.621Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/hyper-silk-hero/thumbnail.svg"
 }
