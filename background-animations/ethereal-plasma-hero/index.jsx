@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 // Core WebGL Renderer
 // ============================================================================
 
-export function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+export function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -17,14 +17,8 @@ export function createShader(gl: WebGLRenderingContext, type: number, source: st
   return shader;
 }
 
-export interface ShaderBackgroundProps {
-  vertexShaderSource: string;
-  fragmentShaderSource: string;
-  className?: string;
-}
-
-export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '' }: ShaderBackgroundProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '' }) {
+  const canvasRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -92,16 +86,24 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
     const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
     const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
       mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        mouseRef.current.x = (e.touches[0].clientX - rect.left) * dpr;
+        mouseRef.current.y = canvas.height - (e.touches[0].clientY - rect.top) * dpr;
+      }
+    }, { passive: true });
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
     const resize = () => {
@@ -115,7 +117,7 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
@@ -128,6 +130,8 @@ export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, cla
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       const t = (time - startTime) * 0.001;
+      
+      // Support multiple uniform naming conventions
       if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
@@ -173,113 +177,131 @@ const shaderData = {
     void main() { gl_Position = vec4(position, 0.0, 1.0); }
   `,
   fragment: `
-      precision highp float;
-      uniform float uTime;
-      uniform vec2 uResolution;
-      uniform vec2 uMouse;
+    precision highp float;
+    uniform float uTime;
+    uniform vec2 uResolution;
+    uniform vec2 uMouse;
 
-      mat2 rot(float a) {
-          float s = sin(a), c = cos(a);
-          return mat2(c, -s, s, c);
-      }
-      
-      float hash(vec3 p) {
-          p = fract(p * vec3(123.34, 456.21, 567.89));
-          p += dot(p, p.zyx + 31.32);
-          return fract(p.x * p.y * p.z);
-      }
-      
-      float noise(vec3 x) {
-          vec3 i = floor(x);
-          vec3 f = fract(x);
-          f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
-                         mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
-                     mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
-                         mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
-      }
+    // Rotation matrix for angling the streaks
+    mat2 rot(float a) {
+        float s = sin(a), c = cos(a);
+        return mat2(c, -s, s, c);
+    }
 
-      float fbm(vec3 p) {
-          float f = 0.0, w = 0.5;
-          for(int i = 0; i < 5; i++) {
-              f += w * noise(p);
-              p *= 2.0; w *= 0.5;
-          }
-          return f;
-      }
+    // 2D Noise function for fluid distortion
+    float hash(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+    }
+    
+    float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), f.x),
+                   mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
 
-      float map(vec3 p) {
-          // Twist space
-          p.xy *= rot(p.z * 0.1 + uTime * 0.1);
-          float n = fbm(p + vec3(uTime * 0.2, uTime * 0.1, 0.0));
-          
-          // Form a dense cloud tube
-          float tube = length(p.xy) - (2.0 + n * 4.0);
-          return tube;
-      }
+    // Fractional Brownian Motion for complex flow
+    float fbm(vec2 p) {
+        float f = 0.0, w = 0.5;
+        for(int i = 0; i < 5; i++) {
+            f += w * noise(p);
+            p *= 2.0;
+            w *= 0.5;
+        }
+        return f;
+    }
 
-      void main() {
-          vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
-          vec2 m = uMouse.xy / uResolution.xy;
-          if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5);
+    // Dynamic Iridescent Palette based on the reference images
+    // Shifting through deep reds, bright cyans, and warm yellows
+    vec3 palette(float t) {
+        vec3 a = vec3(0.5, 0.5, 0.5);
+        vec3 b = vec3(0.5, 0.5, 0.5);
+        vec3 c = vec3(1.0, 1.0, 1.0);
+        // Custom phases for cyan, magenta/red, yellow
+        vec3 d = vec3(0.0, 0.33, 0.67); 
+        return a + b * cos(6.28318 * (c * t + d));
+    }
 
-          vec3 ro = vec3(0.0, 0.0, -3.0);
-          vec3 rd = normalize(vec3(uv, 1.0));
-          
-          rd.xy *= rot((m.x - 0.5) * 2.0);
-          rd.yz *= rot((m.y - 0.5) * 2.0);
-          
-          float t = 0.0;
-          float density = 0.0;
-          vec3 col = vec3(0.0);
-          
-          // Volumetric raymarching
-          for(int i = 0; i < 70; i++) {
-              vec3 p = ro + rd * t;
-              float d = map(p);
-              
-              if(d < 0.0) {
-                  // Inside the plasma cloud
-                  float localDensity = -d * 0.1;
-                  density += localDensity;
-                  
-                  // Color gradient through the volume based on position and time
-                  vec3 c1 = vec3(0.8, 0.1, 0.9); // Magenta
-                  vec3 c2 = vec3(0.1, 0.6, 1.0); // Cyan
-                  vec3 c3 = vec3(0.0, 0.05, 0.3); // Deep blue
-                  
-                  float mixFactor = sin(p.z * 0.5 + uTime) * 0.5 + 0.5;
-                  vec3 baseCol = mix(c3, mix(c1, c2, mixFactor), smoothstep(0.0, 2.0, density));
-                  
-                  col += baseCol * localDensity * exp(-0.1 * density); // Faux scattering
-              }
-              
-              t += max(abs(d) * 0.5, 0.1); // Step safely
-              if(t > 15.0 || density > 5.0) break;
-          }
-          
-          // Outer cosmic background glow
-          col += vec3(0.1, 0.0, 0.2) * (1.0 - length(uv));
-          
-          col = clamp((col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14), 0.0, 1.0); // ACES
-          gl_FragColor = vec4(col, 1.0);
-      }
+    void main() {
+        // Normalize coordinates and account for aspect ratio
+        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
+        
+        // Interactive mouse input for slight perspective/flow shifts
+        vec2 m = uMouse.xy / uResolution.xy;
+        if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5);
+
+        // Apply a diagonal rotation similar to the reference images
+        uv *= rot(-0.5 + m.x * 0.2); 
+        
+        // Base color accumulator
+        vec3 finalColor = vec3(0.0);
+
+        // Create multiple layers of light streaks
+        for(float i = 0.0; i < 4.0; i++) {
+            // Layer-specific offset and scale
+            float scale = 1.0 + i * 0.5;
+            vec2 p = uv * scale;
+            
+            // Flow animation
+            float t = uTime * (0.2 + i * 0.1);
+            
+            // Distort the vertical coordinates (x-axis after rotation) to create streaks
+            // Use noise to make them waver and blend like fluid or smoke
+            float distortion = fbm(vec2(p.y * 0.5 + t, p.x * 0.1 - t * 0.5));
+            
+            // The "core" of the streak, clamped to create sharp light edges
+            float streak = sin(p.x * 10.0 + distortion * 8.0 + i * 1.5);
+            streak = smoothstep(0.8, 1.0, streak); // Sharpen the bright parts
+            
+            // Chromatic aberration / dispersion effect
+            // Sample slightly offset palettes to create rainbow edges
+            float colorIndex = p.y * 0.2 + t * 0.1 + i * 0.2;
+            vec3 layerColor = palette(colorIndex + distortion * 0.2);
+            
+            // Add a burst of specific colors (reds and cyans prominent in references)
+            vec3 highlight = mix(vec3(0.1, 0.8, 1.0), vec3(1.0, 0.1, 0.2), sin(colorIndex * 3.14) * 0.5 + 0.5);
+            layerColor = mix(layerColor, highlight, 0.6);
+
+            // Attenuate brightness based on layer depth and add to total
+            finalColor += layerColor * streak * (1.0 / (i + 1.0));
+            
+            // Add wide, soft glow around the streaks
+            float softGlow = max(0.0, sin(p.x * 5.0 + distortion * 4.0));
+            finalColor += layerColor * pow(softGlow, 4.0) * 0.2;
+        }
+
+        // Deepen the background to a rich, dark tone instead of pure black
+        vec3 bgColor = mix(vec3(0.02, 0.01, 0.05), vec3(0.0, 0.05, 0.1), length(uv));
+        finalColor += bgColor;
+
+        // Contrast and vibrancy boost (ACES tonemapping approx)
+        finalColor *= 1.2;
+        finalColor = clamp((finalColor * (2.51 * finalColor + 0.03)) / (finalColor * (2.43 * finalColor + 0.59) + 0.14), 0.0, 1.0);
+
+        // Vignette to frame the light
+        finalColor *= 1.0 - length(uv) * 0.3;
+
+        gl_FragColor = vec4(finalColor, 1.0);
+    }
   `
 };
 
-export interface EtherealPlasmaBackgroundHeroProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children?: React.ReactNode;
-}
-
-export const EtherealPlasmaBackgroundHero = ({ className = '', children, ...props }: EtherealPlasmaBackgroundHeroProps) => (
-  <div className={`relative w-full h-full bg-[#050010] overflow-hidden font-sans ${className}`} {...props}>
+export const EtherealPlasmaBackgroundHero = ({ className = '', ...props }) => (
+  <div className={`relative w-full h-full bg-[#030008] overflow-hidden font-sans ${className}`} {...props}>
+    {/* Base Shader Layer */}
     <div className="absolute inset-0 z-0">
       <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(5, 0, 16, 0.95) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
   </div>
 );
+
+export default function App() {
+  return (
+    <div className="w-full h-screen bg-black">
+      <EtherealPlasmaBackgroundHero />
+    </div>
+  );
+}
