@@ -1,1 +1,330 @@
-FILE://c:/Users/Dhileep/.gemini/antigravity-ide/brain/07118eb9-95fb-473a-b1e8-3d385ad0886c/scratch/batch_24.txt
+import React from 'react';
+
+function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function hexToRgb(hex: string) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [
+    parseInt(result[1], 16) / 255,
+    parseInt(result[2], 16) / 255,
+    parseInt(result[3], 16) / 255
+  ] : [1, 1, 1];
+}
+
+function ShaderBackground({ 
+  vertexShaderSource, 
+  fragmentShaderSource, 
+  className = '',
+  speed = 1.0,
+  color1 = '#ff0000',
+  color2 = '#0000ff',
+  ...props
+}: any) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const mouseRef = React.useRef({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+    if (!gl) return;
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    if (!vertexShader || !fragmentShader) return;
+
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    
+    gl.useProgram(program);
+
+    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
+    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    
+    const positionLocation = gl.getAttribLocation(program, 'position');
+    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
+    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
+    if (finalPosLoc >= 0) {
+      gl.enableVertexAttribArray(finalPosLoc);
+      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    const uvBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+    
+    const uvLocation = gl.getAttribLocation(program, 'uv');
+    if (uvLocation >= 0) {
+      gl.enableVertexAttribArray(uvLocation);
+      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    const timeLocation = gl.getUniformLocation(program, 'iTime');
+    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
+    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
+    
+    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
+    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
+    const uResLocation = gl.getUniformLocation(program, 'u_res');
+
+    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
+    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
+    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
+    
+    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
+    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
+    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      mouseRef.current.x = (e.clientX - rect.left) * dpr;
+      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    let initialSet = false;
+    let animationFrameId: number;
+    let startTime = performance.now();
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = canvas.clientWidth * dpr;
+      const height = canvas.clientHeight * dpr;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        gl.viewport(0, 0, width, height);
+      }
+    };
+
+    const render = (time: number) => {
+      resize();
+
+      if (!initialSet && canvas.width > 0) {
+        mouseRef.current.x = canvas.width / 2;
+        mouseRef.current.y = canvas.height / 2;
+        initialSet = true;
+      }
+
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      const t = (time - startTime) * 0.001;
+      
+      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
+      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
+
+      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
+      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
+      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
+      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
+
+      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
+      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
+      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
+      
+      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
+      if (uColor1Loc !== null) {
+        const c1 = hexToRgb(color1);
+        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
+      }
+      if (uColor2Loc !== null) {
+        const c2 = hexToRgb(color2);
+        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
+      }
+
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    animationFrameId = requestAnimationFrame(render);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+      gl.deleteProgram(program);
+      gl.deleteShader(vertexShader);
+      gl.deleteShader(fragmentShader);
+      gl.deleteBuffer(positionBuffer);
+      gl.deleteBuffer(uvBuffer);
+    };
+  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`w-full h-full block pointer-events-auto ${className}`}
+      style={{ touchAction: 'none' }}
+    />
+  );
+}
+
+const shaderData = {
+  vertex: `
+    attribute vec2 position;
+    void main() { gl_Position = vec4(position, 0.0, 1.0); }
+  `,
+  fragment: `
+    precision highp float;
+    uniform vec2 uResolution;
+    uniform float uTime;
+    uniform vec2 uMouse;
+
+    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
+
+    // 3D Voronoi / Cellular Noise Algorithm
+    vec3 hash33(vec3 p) {
+        p = fract(p * vec3(443.897, 441.423, 437.195));
+        p += dot(p, p.yxz + 19.19);
+        return fract((p.xxy + p.yxx) * p.zyx);
+    }
+
+    // Calculate distance to the nearest Voronoi cell center
+    float voronoiDist(vec3 p) {
+        vec3 n = floor(p);
+        vec3 f = fract(p);
+        
+        float md = 8.0;
+        
+        for(int k=-1; k<=1; k++)
+        for(int j=-1; j<=1; j++)
+        for(int i=-1; i<=1; i++) {
+            vec3 g = vec3(float(i),float(j),float(k));
+            vec3 o = hash33(n + g);
+            
+            // Animate the cell nodes independently over time to make the web feel alive
+            o = 0.5 + 0.5 * sin(uTime + 6.2831 * o);
+            
+            vec3 r = g + o - f;
+            float d = dot(r,r);
+            
+            if(d < md) { md = d; }
+        }
+        return sqrt(md);
+    }
+
+    // Map the Cosmic Dark Matter Web
+    float map(vec3 p) {
+        // Calculate the raw 3D Voronoi space
+        float v = voronoiDist(p * 0.5);
+        
+        // We invert the Voronoi algorithm to physically render the cell walls (the filaments)
+        // rather than the cell centers. We declare the "surface" to be where Voronoi == 0.5.
+        float web = abs(v - 0.5) - 0.04; // 0.04 represents the physical thickness of the dark matter filaments
+        
+        return web;
+    }
+
+    vec3 getNormal(vec3 p) {
+        vec2 e = vec2(0.01, 0.0);
+        return normalize(vec3(
+            map(p+e.xyy) - map(p-e.xyy), 
+            map(p+e.yxy) - map(p-e.yxy), 
+            map(p+e.yyx) - map(p-e.yyx)
+        ));
+    }
+
+    void main() {
+        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
+        
+        // Camera flying continuously forward through the dark matter network
+        vec3 ro = vec3(0.0, 0.0, uTime);
+        vec3 rd = normalize(vec3(uv, 1.0));
+        
+        vec2 m = uMouse / uResolution;
+        if(length(uMouse) > 10.0) { 
+            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
+            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
+        }
+        
+        // Gentle cinematic camera drift
+        rd.xy *= rot(sin(uTime * 0.1) * 0.2);
+        
+        float dTotal = 0.0;
+        vec3 p;
+        float etherGlow = 0.0;
+        
+        // Raymarch the Web
+        for(int i = 0; i < 90; i++) {
+            p = ro + rd * dTotal;
+            float d = map(p);
+            
+            // Subsurface volumetric dark energy radiating from the filaments
+            etherGlow += 0.005 / (0.01 + abs(d)) * exp(-dTotal * 0.1);
+            
+            if(d < 0.001 || dTotal > 20.0) break;
+            
+            // Voronoi structures contain mathematical discontinuities, requiring careful step sizes
+            dTotal += d * 0.7; 
+        }
+        
+        vec3 col = vec3(0.0); // Deep empty space
+        
+        if (dTotal < 20.0) {
+            vec3 n = getNormal(p);
+            
+            // The physical filaments themselves are pitch black (Dark Matter)
+            col = vec3(0.01);
+            
+            // Intense, color-shifting Fresnel rim lighting to define the edges of the structure
+            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 2.0);
+            vec3 edgeColor = mix(vec3(0.5, 0.0, 1.0), vec3(0.0, 0.8, 1.0), sin(p.z + uTime) * 0.5 + 0.5);
+            
+            col += edgeColor * fresnel * 2.5;
+        }
+        
+        // Globally add the intense volumetric cosmic ether filling the gaps in the web
+        col += vec3(0.6, 0.1, 1.0) * etherGlow * 0.6; // Deep purple/magenta ambient radiation
+        
+        // Render bright distant stars, only visible through the gaps in the web
+        if (dTotal > 19.0) {
+            float stars = pow(hash33(rd * 100.0).x, 150.0);
+            col += vec3(1.0, 0.9, 1.0) * stars * 1.5;
+        }
+        
+        // Fade to black in the distance
+        col = mix(col, vec3(0.0), smoothstep(10.0, 20.0, dTotal));
+        
+        col = pow(col, vec3(0.85)); // Gamma curve
+        col *= 1.0 - dot(uv, uv) * 0.4; // Vignette
+        
+        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+    }
+  `
+};
+
+export const CosmicEtherHero = ({ className = '', children, ...props }: any) => (
+  <div className={`relative w-full h-full bg-[#000000] overflow-hidden font-sans ${className}`}>
+    <div className="absolute inset-0 z-0">
+      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+    </div>
+    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.95) 100%)' }} />
+    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
+      <div className="pointer-events-auto">{children}</div>
+    </div>
+  </div>
+);
