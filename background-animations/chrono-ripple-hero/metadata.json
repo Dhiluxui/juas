@@ -1,24 +1,15 @@
 {
   "slug": "chrono-ripple-hero",
   "name": "Chrono Ripple",
-  "description": "Chrono Ripple background animation",
+  "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [
-    "shader",
-    "webgl",
-    "background"
-  ],
-  "tech_stack": [
-    "React",
-    "WebGL",
-    "GLSL",
-    "Tailwind CSS"
-  ],
+  "tags": [],
+  "tech_stack": [],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/chrono-ripple-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/chrono-ripple-hero/index.jsx",
-  "created_at": "2026-07-26T17:02:02.989Z",
+  "created_at": "2026-07-30T07:10:09.585Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/chrono-ripple-hero/thumbnail.svg"
 }
