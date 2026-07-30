@@ -3,13 +3,38 @@
   "name": "Infinite Glass Labyrinth",
   "description": "Breathtaking, highly creative premium animation.",
   "category": "Background Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Glassmorphism",
+    "Gradient"
+  ],
+  "tech_stack": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Glassmorphism",
+    "Gradient"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/infinite-glass-labyrinth-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/infinite-glass-labyrinth-hero/index.jsx",
-  "created_at": "2026-07-30T07:33:01.949Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/infinite-glass-labyrinth-hero/thumbnail.svg"
+  "created_at": "2026-07-30T07:37:00.036Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/infinite-glass-labyrinth-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/infinite-glass-labyrinth-hero/video.webm"
 }
