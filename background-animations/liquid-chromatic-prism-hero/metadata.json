@@ -3,13 +3,38 @@
   "name": "Liquid Chromatic Prism",
   "description": "Updated self-runnable animation.",
   "category": "Background Animations",
-  "tags": [],
-  "tech_stack": [],
+  "tags": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient",
+    "Glitch Effect"
+  ],
+  "tech_stack": [
+    "React",
+    "TypeScript",
+    "Inline Styles",
+    "Canvas API",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "useRef",
+    "Mouse Tracking",
+    "Gradient",
+    "Glitch Effect"
+  ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-chromatic-prism-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/liquid-chromatic-prism-hero/index.jsx",
-  "created_at": "2026-07-30T07:13:23.883Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-chromatic-prism-hero/thumbnail.svg"
+  "created_at": "2026-07-30T08:01:53.725Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-chromatic-prism-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-chromatic-prism-hero/video.webm"
 }
