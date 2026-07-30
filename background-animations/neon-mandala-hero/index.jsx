@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+// WebGL utility to compile shaders
+function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,7 +14,8 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
+// Utility to convert hex colors to RGB for WebGL
+function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? [
     parseInt(result[1], 16) / 255,
@@ -27,19 +29,20 @@ function ShaderBackground({
   fragmentShaderSource, 
   className = '',
   speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
   ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+}) {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, alpha: false });
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -51,17 +54,20 @@ function ShaderBackground({
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
+    }
     
     gl.useProgram(program);
 
+    // Full screen quad
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     
+    // Bind position attribute
     const positionLocation = gl.getAttribLocation(program, 'position');
     const aPositionLocation = gl.getAttribLocation(program, 'a_position');
     const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
@@ -70,43 +76,34 @@ function ShaderBackground({
       gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
     }
 
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
+    // Uniform locations
+    const uTimeLoc = gl.getUniformLocation(program, 'uTime');
+    const uResolutionLoc = gl.getUniformLocation(program, 'uResolution');
+    const uMouseLoc = gl.getUniformLocation(program, 'uMouse');
     const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
 
-    const handleMouseMove = (e: MouseEvent) => {
+    // Interactive mouse tracking
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
       mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
+    
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        mouseRef.current.x = (e.touches[0].clientX - rect.left) * dpr;
+        mouseRef.current.y = canvas.height - (e.touches[0].clientY - rect.top) * dpr;
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
     const resize = () => {
@@ -120,7 +117,7 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
@@ -129,33 +126,15 @@ function ShaderBackground({
         initialSet = true;
       }
 
-      gl.clearColor(0, 0, 0, 1);
+      gl.clearColor(0.0, 0.0, 0.0, 1); // Pure black background
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       const t = (time - startTime) * 0.001;
       
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
+      if (uTimeLoc !== null) gl.uniform1f(uTimeLoc, t);
+      if (uResolutionLoc !== null) gl.uniform2f(uResolutionLoc, canvas.width, canvas.height);
+      if (uMouseLoc !== null) gl.uniform2f(uMouseLoc, mouseRef.current.x, mouseRef.current.y);
       if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(render);
@@ -163,16 +142,17 @@ function ShaderBackground({
 
     animationFrameId = requestAnimationFrame(render);
 
+    // Cleanup
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       cancelAnimationFrame(animationFrameId);
       gl.deleteProgram(program);
       gl.deleteShader(vertexShader);
       gl.deleteShader(fragmentShader);
       gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [vertexShaderSource, fragmentShaderSource, speed]);
 
   return (
     <canvas
@@ -200,153 +180,134 @@ const shaderData = {
         return mat2(c, -s, s, c);
     }
 
-    // Seamless polar repetition for absolute radial symmetry (Mandala Effect)
-    vec2 modPolar(vec2 p, float repetitions) {
-        float angle = 6.2831853 / repetitions;
-        float a = atan(p.y, p.x) + angle/2.0;
-        float r = length(p);
-        a = mod(a, angle) - angle/2.0;
-        return vec2(cos(a), sin(a)) * r;
+    // Hash and Noise for Fluid Generation
+    float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
     }
 
-    // Distance to a 3D box
-    float sdBox(vec3 p, vec3 b) {
-      vec3 d = abs(p) - b;
-      return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+    float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash(i);
+        float b = hash(i + vec2(1.0, 0.0));
+        float c = hash(i + vec2(0.0, 1.0));
+        float d = hash(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
     }
 
-    // Map the intricate geometric structure
-    float map(vec3 p) {
-        float d = 100.0;
-        float t = uTime * 0.3;
-        
-        // 0. Central Core (Pulsing Sphere)
-        float core = length(p) - 0.3 + sin(uTime * 4.0) * 0.05;
-        d = min(d, core);
-        
-        // 1. Layer 1: Inner Octagonal Gear (Rotates Clockwise)
-        vec3 p1 = p;
-        p1.xy *= rot(t * 1.5);
-        p1.xy = modPolar(p1.xy, 8.0);
-        p1.x -= 1.0;
-        float l1 = sdBox(p1, vec3(0.3, 0.05, 0.1));
-        d = min(d, l1);
-        
-        // 2. Layer 2: Intersecting Hexagons (Rotates Counter-Clockwise)
-        vec3 p2 = p;
-        p2.xy *= rot(-t * 0.8);
-        p2.xy = modPolar(p2.xy, 6.0);
-        p2.x -= 2.0;
-        p2.xz *= rot(3.1415 / 4.0); // Tilt the geometry on the Z axis
-        float l2 = sdBox(p2, vec3(0.5, 0.02, 0.2));
-        d = min(d, l2);
-        
-        // 3. Layer 3: Outer Complex Ring (24-fold symmetry, Rotates slowly Clockwise)
-        vec3 p3 = p;
-        p3.xy *= rot(t * 0.4);
-        p3.xy = modPolar(p3.xy, 24.0);
-        p3.x -= 3.5;
-        p3.xz *= rot(3.1415 / 4.0); // Create diamond shapes along the edge
-        float l3 = sdBox(p3, vec3(0.2, 0.05, 0.2));
-        
-        // Thin connecting neon ring
-        float ring = length(vec2(length(p.xy) - 3.5, p.z)) - 0.015;
-        
-        d = min(d, min(l3, ring));
-        
-        return d;
+    // Fractional Brownian Motion for complex organic shapes
+    float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.5;
+        mat2 r = rot(0.65); // rotation per octave
+        for (int i = 0; i < 6; i++) {
+            v += a * noise(p);
+            p = r * p * 2.0;
+            a *= 0.5;
+        }
+        return v;
     }
 
     void main() {
         vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
         
-        // Camera setup (looking down the Z-axis at the mandala)
-        vec3 ro = vec3(0.0, 0.0, -9.0);
-        vec3 rd = normalize(vec3(uv, 1.0));
-        
-        // Smooth 3D Parallax Tilt with Mouse
-        vec2 m = uMouse / uResolution;
+        // Mouse interaction for subtle parallax shift
+        vec2 mouse = uMouse / uResolution;
         if (length(uMouse) > 10.0) {
-            ro.yz *= rot((m.y - 0.5) * 1.2);
-            ro.xz *= rot((m.x - 0.5) * 1.2);
-            rd.yz *= rot((m.y - 0.5) * 1.2);
-            rd.xz *= rot((m.x - 0.5) * 1.2);
+            uv += (mouse - 0.5) * 0.1;
         }
         
-        // Subtle automatic cinematic tilt
-        ro.yz *= rot(-0.4);
-        rd.yz *= rot(-0.4);
-        ro.xz *= rot(sin(uTime * 0.3) * 0.2);
-        rd.xz *= rot(sin(uTime * 0.3) * 0.2);
+        // Sweeping diagonal setup to match the reference images flow
+        uv *= rot(0.7);
+        vec2 p = uv * 2.2; 
         
-        float dTotal = 0.0;
-        vec3 p;
+        float t = uTime * 0.15; // Animation speed
         
-        // Volumetric glow accumulators separated by layer
-        float glowCore = 0.0;
-        float glowL1 = 0.0;
-        float glowL2 = 0.0;
-        float glowL3 = 0.0;
+        // Domain warping magic (recursive noise) to simulate fluid folds
+        vec2 q = vec2(0.0);
+        q.x = fbm(p + t);
+        q.y = fbm(p + vec2(1.0) - t);
         
-        // Raymarching Loop
-        for(int i = 0; i < 90; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            
-            // Re-evaluate layers to accumulate specific colored glow based on proximity
-            float t = uTime * 0.3;
-            
-            float core = length(p) - 0.3;
-            
-            vec3 p1 = p; p1.xy *= rot(t * 1.5); p1.xy = modPolar(p1.xy, 8.0); p1.x -= 1.0;
-            float l1 = sdBox(p1, vec3(0.3, 0.05, 0.1));
-            
-            vec3 p2 = p; p2.xy *= rot(-t * 0.8); p2.xy = modPolar(p2.xy, 6.0); p2.x -= 2.0; p2.xz *= rot(3.1415/4.0);
-            float l2 = sdBox(p2, vec3(0.5, 0.02, 0.2));
-            
-            vec3 p3 = p; p3.xy *= rot(t * 0.4); p3.xy = modPolar(p3.xy, 24.0); p3.x -= 3.5; p3.xz *= rot(3.1415/4.0);
-            float l3 = sdBox(p3, vec3(0.2, 0.05, 0.2));
-            
-            // Accumulate exponential glow (bloom) around the structures
-            glowCore += 0.006 / (0.01 + abs(core));
-            glowL1 += 0.005 / (0.01 + abs(l1));
-            glowL2 += 0.004 / (0.01 + abs(l2));
-            glowL3 += 0.003 / (0.01 + abs(l3));
-            
-            // Ray collision or far clip
-            if (d < 0.001 || dTotal > 15.0) break;
-            
-            dTotal += d * 0.8; // Dampen step size for accuracy on geometric edges
-        }
+        vec2 r = vec2(0.0);
+        r.x = fbm(p + 2.0 * q + vec2(1.7, 9.2) + t * 1.2);
+        r.y = fbm(p + 2.0 * q + vec2(8.3, 2.8) - t * 1.1);
         
-        vec3 col = vec3(0.01, 0.01, 0.03); // Deep space void
+        // The master heightmap/field
+        float f = fbm(p + r * 2.5);
         
-        // Apply highly vibrant neon colors to the accumulated volumetric fields
-        col += vec3(1.0, 0.1, 0.6) * glowCore; // Hot pink pulsing core
-        col += vec3(0.0, 1.0, 0.8) * glowL1;   // Cyan inner ring
-        col += vec3(0.6, 0.0, 1.0) * glowL2;   // Deep purple intersecting hexagons
-        col += vec3(1.0, 0.8, 0.0) * glowL3;   // Golden complex outer rim
+        // --- The Ridges / Striations ---
+        // High frequency sine based on the noise field to create topographic metallic lines
+        float freq = 250.0; // Density of the ridges
+        // Sharpen the lines using a power function
+        float lines = pow(abs(sin(f * freq + t * 8.0)), 1.5); 
         
-        // Add a blinding white core energy burst
-        col += vec3(1.0) * pow(glowCore * 0.2, 4.0);
+        // --- Color Palette ---
+        // Vibrant neon/iridescent colors from your references
+        vec3 colorPink  = vec3(1.0, 0.0, 0.4); // Hot Pink
+        vec3 colorCyan  = vec3(0.0, 0.9, 1.0); // Electric Cyan
+        vec3 colorGold  = vec3(1.0, 0.6, 0.0); // Warm Gold/Orange
+        vec3 colorDark  = vec3(0.0, 0.0, 0.0); // Pure Black for the voids
         
-        // Post-Processing
-        col = pow(col, vec3(0.9)); // Gamma correction
-        col *= 1.0 - dot(uv, uv) * 0.4; // Vignette falloff
+        // Organically blend colors based on the domain warp fields
+        vec3 col = mix(colorDark, colorPink, smoothstep(0.2, 0.6, q.x));
+        col = mix(col, colorCyan, smoothstep(0.3, 0.9, r.y));
+        col = mix(col, colorGold, smoothstep(0.5, 0.8, q.y * r.x * 1.5));
         
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+        // --- Shading & Lighting (DEEP ONLY) ---
+        // Create the deep dark background voids where 'f' is low (Valleys are pure black)
+        // This extreme smoothstep is what creates the "deep only" high contrast look.
+        float shadowMask = smoothstep(0.38, 0.68, f);
+        
+        // Combine everything: Apply lines as a modulation of the brightness
+        vec3 finalCol = col * lines * shadowMask * 4.0;
+        
+        // Add metallic specular highlights to the very peaks of the ridges
+        float spec = pow(abs(sin(f * freq + 1.57 + t * 8.0)), 8.0); 
+        finalCol += vec3(1.0, 0.9, 0.9) * spec * shadowMask * 2.0;
+        
+        // Ambient colorful glow bleeding slightly into the dark areas
+        finalCol += col * pow(f, 4.0) * 1.2;
+        
+        // Vignette to match the dark, dramatic framing
+        float dist = length(uv);
+        finalCol *= smoothstep(1.5, 0.1, dist);
+        
+        // Ensure pure blacks remain pitch black for high contrast
+        finalCol = max(finalCol - 0.05, 0.0);
+        
+        // Post-processing Gamma correction to make colors pop vibrantly
+        finalCol = pow(finalCol, vec3(0.95));
+        
+        gl_FragColor = vec4(clamp(finalCol, 0.0, 1.0), 1.0);
     }
   `
 };
 
-export const NeonMandalaHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#010103] overflow-hidden font-sans ${className}`}>
+export const NeonMandalaHero = ({ className = '', children, ...props }) => (
+  <div className={`relative w-full h-screen bg-black overflow-hidden font-sans ${className}`}>
+    {/* Canvas Background */}
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+      <ShaderBackground 
+        vertexShaderSource={shaderData.vertex} 
+        fragmentShaderSource={shaderData.fragment} 
+        {...props} 
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 20%, rgba(1, 1, 3, 0.9) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
+    
+    {/* Content Container */}
+    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center p-6">
+      <div className="pointer-events-auto w-full max-w-4xl mx-auto flex flex-col items-center text-center">
+        {children}
+      </div>
     </div>
   </div>
 );
+
+export default function App() {
+  return (
+    <NeonMandalaHero speed={1.0}>
+      {/* You can add text or UI elements here. They will appear over the shader. */}
+    </NeonMandalaHero>
+  );
+}
