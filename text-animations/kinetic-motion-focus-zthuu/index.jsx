@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
+export interface KineticMotionFocusProps {
+  /** @title Main Title */
+  title?: string;
+  /** @title Subtitle Text */
+  subtext?: string;
+  /** @title Loop Interval (ms) */
+  loopInterval?: number;
+  /** @title Text Color */
+  textColor?: string;
+}
+
 const CinematicStyles = () => (
     <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap');
@@ -10,11 +21,6 @@ const CinematicStyles = () => (
             line-height: 1;
         }
 
-        /* 
-           Custom 'Focus' animation: 
-           Starts with a slight skew and heavy blur, 
-           snapping into sharp focus with zero skew.
-        */
         @keyframes focusIn {
             0% { 
                 opacity: 0; 
@@ -34,27 +40,28 @@ const CinematicStyles = () => (
     `}} />
 );
 
-export default function App() {
+export function KineticMotionFocus({
+  title = "Kinetic Motion",
+  subtext = "Design for the future of interaction",
+  loopInterval = 3500,
+  textColor = "#ffffff"
+}: KineticMotionFocusProps) {
     const [key, setKey] = useState(0);
 
-    // Auto-loop the animation every 3.5 seconds
     useEffect(() => {
+        if (!loopInterval || loopInterval <= 0) return;
         const interval = setInterval(() => {
             setKey(prev => prev + 1);
-        }, 3500);
+        }, loopInterval);
         return () => clearInterval(interval);
-    }, []);
-
-    const title = "Kinetic Motion";
-    const subtext = "Design for the future of interaction";
+    }, [loopInterval]);
 
     return (
         <div className="min-h-screen w-full bg-[#0a0a0a] flex flex-col items-center justify-center p-6 overflow-hidden">
             <CinematicStyles />
             
             <div className="text-center">
-                {/* Main Heading */}
-                <h1 className="kinetic-text text-6xl md:text-8xl text-white mb-6">
+                <h1 className="kinetic-text text-6xl md:text-8xl mb-6" style={{ color: textColor }}>
                     {title.split('').map((char, i) => (
                         <span 
                             key={`${key}-${i}`} 
@@ -66,7 +73,6 @@ export default function App() {
                     ))}
                 </h1>
 
-                {/* Subheading */}
                 <div className="relative">
                     <p className="text-zinc-500 text-lg md:text-xl font-medium tracking-wide">
                         {subtext.split('').map((char, i) => (
@@ -84,3 +90,5 @@ export default function App() {
         </div>
     );
 }
+
+export default KineticMotionFocus;
