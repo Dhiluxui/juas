@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { Play } from 'lucide-react';
 
 const animateValue = (duration, easing, callback) => {
     return new Promise(resolve => {
@@ -187,147 +186,36 @@ const MotionText = ({
     );
 };
 
-const Scene = ({ children, isActive, className = "" }) => {
-    return (
-        <div 
-            className={`absolute flex flex-col transition-opacity duration-700 pointer-events-none ${isActive ? 'opacity-100' : 'opacity-0'} ${className}`}
-        >
-            {React.Children.map(children, child => {
-                if (React.isValidElement(child)) {
-                    return React.cloneElement(child, { isActive });
-                }
-                return child;
-            })}
-        </div>
-    );
-};
-
 export default function App() {
-    const [activeScene, setActiveScene] = useState(-1);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isActive, setIsActive] = useState(false);
 
-    // Configuration defining how long each scene should stay on screen (in milliseconds)
-    const sceneDurations = [
-        3000, // Scene 0: Brightness...
-        3000, // Scene 1: Light moves...
-        4500, // Scene 2: Multi-line...
-        3800, // Scene 3: Highlight disappears...
-        3500, // Scene 4: Clarity...
-        4500, // Scene 5: Cascading
-        3500  // Scene 6: Purpose
-    ];
-
-    const runSequence = async () => {
-        if (isPlaying) return;
-        setIsPlaying(true);
-        setActiveScene(-1); // Reset first
-
-        // Short initial delay before starting
-        await new Promise(r => setTimeout(r, 500));
-
-        for (let i = 0; i < sceneDurations.length; i++) {
-            setActiveScene(i);
-            // Wait for the specific scene's duration
-            await new Promise(r => setTimeout(r, sceneDurations[i]));
-            
-            // Trigger fade out
-            setActiveScene(-1);
-            // Wait for CSS fade out transition (700ms) plus a tiny gap
-            await new Promise(r => setTimeout(r, 800));
-        }
-
-        setIsPlaying(false);
-    };
-
-    // Auto-start on mount
+    // Auto-start animations and loop continuously
     useEffect(() => {
-        runSequence();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        const initialTimer = setTimeout(() => setIsActive(true), 300);
+        
+        const loopInterval = setInterval(() => {
+            setIsActive(false);
+            // Brief pause before restarting
+            setTimeout(() => setIsActive(true), 100);
+        }, 4000);
+
+        return () => {
+            clearTimeout(initialTimer);
+            clearInterval(loopInterval);
+        };
     }, []);
 
     return (
-        <div className="h-screen w-full bg-[#121214] font-sans flex flex-col items-center justify-center relative overflow-hidden selection:bg-fuchsia-500/30">
-            
-            {/* Ambient Background Elements */}
-            <div className="fixed bottom-0 left-0 right-0 h-[40vh] bg-[radial-gradient(circle_at_50%_120%,rgba(109,40,217,0.15)_0%,rgba(0,0,0,0)_70%)] pointer-events-none z-0" />
-            <div className="fixed bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/80 to-transparent pointer-events-none z-0 shadow-[0_-4px_30px_rgba(168,85,247,0.4)]">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-fuchsia-500/80 to-transparent" />
-            </div>
-
-            {/* Replay Button Control */}
-            <div className="fixed top-8 right-8 z-50">
-                <button 
-                    onClick={runSequence}
-                    disabled={isPlaying}
-                    className={`px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white/90 text-sm font-medium rounded-full transition-all duration-500 flex items-center gap-2 backdrop-blur-md border border-white/10 shadow-lg ${isPlaying ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'}`}
-                >
-                    <Play className="w-4 h-4 fill-white/20" />
-                    Replay Sequence
-                </button>
-            </div>
-
-            {/* Main Stage Area */}
-            <div className="relative w-full max-w-5xl h-[60vh] flex items-center justify-center z-10 px-8">
-                
-                {/* Scene 0 */}
-                <Scene isActive={activeScene === 0} className="items-center">
-                    <MotionText className="text-3xl md:text-5xl" duration={1.2} hideDelay={0.6} hideDuration={1.0}>
-                        Brightness defines the moment
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 1 */}
-                <Scene isActive={activeScene === 1} className="items-center">
-                    <MotionText className="text-3xl md:text-5xl" duration={1.3} hideDelay={0.7} hideDuration={1.0}>
-                        Light moves before <em>words</em>
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 2 */}
-                <Scene isActive={activeScene === 2} className="items-start gap-3 md:gap-4">
-                    <MotionText className="text-2xl md:text-4xl text-gray-300" duration={1.5} hideDelay={0.5} hideDuration={1.2}>
-                        Light doesn't decorate the composition.
-                    </MotionText>
-                    <MotionText className="text-2xl md:text-4xl" seqDelay={0.6} duration={1.6} hideDelay={0.8} hideDuration={1.2}>
-                        It quietly defines <em>what matters.</em>
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 3 */}
-                <Scene isActive={activeScene === 3} className="items-center gap-3">
-                    <MotionText className="text-2xl md:text-4xl" duration={1.0} hideDelay={0.4} hideDuration={0.8}>
-                        When the highlight disappears
-                    </MotionText>
-                    <MotionText className="text-2xl md:text-4xl" seqDelay={1.2} duration={1.4} hideDelay={0.6} hideDuration={1.0}>
-                        the message <em>should</em> remain
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 4 */}
-                <Scene isActive={activeScene === 4} className="items-center">
-                    <MotionText className="text-3xl md:text-5xl" duration={1.8} hideDelay={0.15} hideDuration={1.8}>
-                        Nothing competes with clarity
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 5 */}
-                <Scene isActive={activeScene === 5} className="items-center gap-4">
-                    <MotionText className="text-2xl md:text-4xl" duration={1.2} hideDelay={0.5} hideDuration={1.0}>
-                        Light arrives before the <em>message</em>
-                    </MotionText>
-                    <MotionText className="text-2xl md:text-4xl text-gray-300" seqDelay={0.8} duration={1.4} hideDelay={0.6} hideDuration={1.2}>
-                        The words simply complete the thought
-                    </MotionText>
-                </Scene>
-
-                {/* Scene 6 */}
-                <Scene isActive={activeScene === 6} className="items-center">
-                    <MotionText className="text-3xl md:text-5xl" duration={1.5} hideDelay={0.6} hideDuration={1.2}>
-                        Every highlight has <em>purpose</em>
-                    </MotionText>
-                </Scene>
-
-            </div>
+        <div className="min-h-screen bg-[#121214] font-sans flex flex-col items-center justify-center relative overflow-hidden selection:bg-fuchsia-500/30 p-8">
+            <MotionText 
+                isActive={isActive} 
+                className="text-3xl md:text-5xl" 
+                duration={1.2} 
+                hideDelay={0.6} 
+                hideDuration={1.0}
+            >
+                Brightness defines the moment
+            </MotionText>
         </div>
     );
 }
