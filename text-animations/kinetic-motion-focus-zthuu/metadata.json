@@ -1,34 +1,22 @@
 {
   "slug": "kinetic-motion-focus-zthuu",
   "name": "Kinetic Motion Focus",
-  "description": "A kinetic character-staggered text reveal component featuring skewed entrances, heavy blur-to-sharp transitions, and an auto-looping timer effect.",
+  "description": "Dynamic focus-reveal text animation with configurable title, subtitle, loop interval, and colors.",
   "category": "Text Animations",
   "tags": [
-    "React",
-    "CSS Animations",
-    "Tailwind CSS",
-    "useState",
-    "useEffect",
-    "Blur & Filter",
-    "Text Animation",
-    "Responsive"
+    "text-animation",
+    "kinetic",
+    "focus",
+    "framer-motion"
   ],
   "tech_stack": [
     "React",
-    "CSS Animations",
-    "Tailwind CSS",
-    "useState",
-    "useEffect",
-    "Blur & Filter",
-    "Text Animation",
-    "Responsive"
+    "Tailwind CSS"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus-zthuu/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/kinetic-motion-focus-zthuu/index.jsx",
-  "created_at": "2026-08-02T06:27:24.980Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus-zthuu/thumbnail.png",
-  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus-zthuu/video.webm"
+  "created_at": "2026-08-02T08:50:57.411Z"
 }
