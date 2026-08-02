@@ -1,128 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Terminal, ShieldAlert, Cpu } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
 
-
-interface AsciiShaderProps {
-  imageSrc: string;
-  className?: string;
-  charSize?: number;
-}
-
-export function AsciiShader({ imageSrc, className = '', charSize = 12 }: AsciiShaderProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-
-    const img = new Image();
-    img.src = imageSrc;
-    img.crossOrigin = 'anonymous';
-
-    let animationFrameId: number;
-
-    img.onload = () => {
-      const offscreen = document.createElement('canvas');
-      const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
-      if (!offCtx) return;
-
-      const density = '    .:/=+*2e#%';
-      let lastTime = 0;
-      
-      const render = (time: number) => {
-        if (time - lastTime < 41) { // Throttle frame rate slightly for classic feel
-          animationFrameId = requestAnimationFrame(render);
-          return;
-        }
-        lastTime = time;
-
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-
-        if (width === 0 || height === 0) {
-          animationFrameId = requestAnimationFrame(render);
-          return;
-        }
-
-        if (canvas.width !== width || canvas.height !== height) {
-          canvas.width = width;
-          canvas.height = height;
-        }
-
-        const cols = Math.floor(width / charSize);
-        const rows = Math.floor(height / charSize);
-
-        if (cols === 0 || rows === 0) {
-          animationFrameId = requestAnimationFrame(render);
-          return;
-        }
-
-        offscreen.width = cols;
-        offscreen.height = rows;
-
-        offCtx.drawImage(img, 0, 0, cols, rows);
-        const imgData = offCtx.getImageData(0, 0, cols, rows);
-        const pixels = imgData.data;
-
-        ctx.clearRect(0, 0, width, height);
-        
-        ctx.font = `bold ${charSize}px monospace`;
-        ctx.textBaseline = 'top';
-
-        const t = time * 0.002;
-
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            const i = (y * cols + x) * 4;
-            const r = pixels[i];
-            const g = pixels[i + 1];
-            const b = pixels[i + 2];
-            
-            const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-            
-            if (brightness > 40) {
-              const noise = Math.sin(x * 0.2 + t) * Math.cos(y * 0.2 + t) * 50;
-              const animatedBrightness = Math.max(0, Math.min(255, brightness + noise));
-              
-              const charIndex = Math.floor((animatedBrightness / 255) * (density.length - 1));
-              const char = density[charIndex];
-
-              if (char !== ' ') {
-                ctx.fillStyle = `rgba(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)}, ${animatedBrightness / 255})`;
-                ctx.fillText(char, x * charSize, y * charSize);
-              }
-            }
-          }
-        }
-        
-        animationFrameId = requestAnimationFrame(render);
-      };
-      
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    };
-  }, [imageSrc, charSize]);
-
-  return (
-    <canvas 
-      ref={canvasRef} 
-      className={`w-full h-full block pointer-events-none select-none ${className}`} 
-    />
-  );
-}
-
+// --- Utility: Convert Hex string to Normalized RGB Array for WebGL ---
+const hexToRgb = (hex: string): [number, number, number] => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255,
+      ]
+    : [1, 1, 1];
+};
 
 const vertexShaderSource = `
   attribute vec2 a_position;
   varying vec2 v_uv;
   void main() {
     v_uv = a_position * 0.5 + 0.5;
-    v_uv.y = 1.0 - v_uv.y; // flip y for textures
+    v_uv.y = 1.0 - v_uv.y;
     gl_Position = vec4(a_position, 0.0, 1.0);
   }
 `;
@@ -130,14 +25,23 @@ const vertexShaderSource = `
 const fragmentShaderSource = `
   precision highp float;
   varying vec2 v_uv;
+  
   uniform float u_time;
+  uniform float u_speed;
   uniform vec2 u_resolution;
   uniform vec2 u_imageResolution;
   uniform sampler2D u_chars;
   uniform sampler2D u_image;
   uniform int u_imageLoaded;
+  
+  // Customization Uniforms
+  uniform vec2 u_mouse;
+  uniform float u_enableMouse;
+  uniform float u_grid;
+  uniform float u_charCount;
+  uniform vec3 u_colorDark;
+  uniform vec3 u_colorLight;
 
-  // Simplex 2D noise for organic flickering
   vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
   vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
@@ -167,9 +71,9 @@ const fragmentShaderSource = `
   }
 
   void main() {
-    // 1. Calculate Object-Cover UV mapping for the background image
+    float scaledTime = u_time * u_speed;
     vec2 st = gl_FragCoord.xy / u_resolution.xy;
-    st.y = 1.0 - st.y; // flip coordinates for sampling
+    st.y = 1.0 - st.y;
     
     vec2 imgUv = st;
     if (u_imageLoaded == 1) {
@@ -194,57 +98,58 @@ const fragmentShaderSource = `
 
     float luma = dot(imgColor.rgb, vec3(0.299, 0.587, 0.114));
 
-    // 2. Procedural Blob (The Revealer / Spotlight)
+    // Calculate Aspect-Corrected Space for the Blob/Spotlight
     vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
-    float rightSideOffset = (u_resolution.x / min(u_resolution.x, u_resolution.y)) * 0.25;
-    vec2 center = vec2(rightSideOffset, 0.0);
-    
-    center.x += snoise(vec2(u_time * 0.1, 0.0)) * 0.15;
-    center.y += snoise(vec2(0.0, u_time * 0.15)) * 0.5;
+    vec2 center = vec2(0.0);
+
+    if (u_enableMouse > 0.5) {
+      // Use Interactive Mouse Follow (convert mouse pixels to uniform space)
+      center = (u_mouse - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+    } else {
+      // Use Procedural Noise Follow
+      float rightSideOffset = (u_resolution.x / min(u_resolution.x, u_resolution.y)) * 0.25;
+      center = vec2(rightSideOffset, 0.0);
+      center.x += snoise(vec2(scaledTime * 0.1, 0.0)) * 0.15;
+      center.y += snoise(vec2(0.0, scaledTime * 0.15)) * 0.5;
+    }
     
     float dist = length(p - center);
-    float blobNoise = snoise(p * 2.5 - u_time * 0.2) * 0.2;
-    blobNoise += snoise(p * 5.0 + u_time * 0.4) * 0.05;
+    float blobNoise = snoise(p * 2.5 - scaledTime * 0.2) * 0.2;
+    blobNoise += snoise(p * 5.0 + scaledTime * 0.4) * 0.05;
     dist += blobNoise;
 
     float blob = smoothstep(0.9, 0.0, dist);
     float core = smoothstep(0.4, 0.0, dist);
     float spotlight = clamp(blob + core, 0.0, 1.0);
 
-    // 3. Background combination
     vec3 unBlobColor = vec3(luma) * vec3(0.3, 0.5, 0.9) * 0.4;
     vec3 revealedColor = imgColor.rgb * 1.2;
     vec3 finalBg = mix(unBlobColor, revealedColor, spotlight);
 
-    // 4. ASCII Grid calculation
-    float grid = 70.0; // resolution of ASCII grid (increased slightly for fidelity)
     vec2 st_aspect = st;
-    st_aspect.x *= u_resolution.x / u_resolution.y; // Fix aspect ratio stretching
-    vec2 cell = floor(st_aspect * grid);
-    vec2 cellUv = fract(st_aspect * grid);
-
-    float n = snoise(cell * 0.1 + u_time * 0.05);
-    float charIndex = floor(mod((n * 20.0) + (u_time * 2.0), 6.0));
+    st_aspect.x *= u_resolution.x / u_resolution.y; 
     
-    vec2 texUv = vec2((cellUv.x + charIndex) / 6.0, cellUv.y);
+    vec2 cell = floor(st_aspect * u_grid);
+    vec2 cellUv = fract(st_aspect * u_grid);
+
+    float n = snoise(cell * 0.1 + scaledTime * 0.05);
+    float charIndex = floor(mod((n * 20.0) + (scaledTime * 2.0), u_charCount));
+    
+    vec2 texUv = vec2((cellUv.x + charIndex) / u_charCount, cellUv.y);
     float charAlpha = texture2D(u_chars, texUv).r;
 
-    // 5. Coloring the ASCII
     float imgIntensity = smoothstep(0.05, 0.5, luma);
     float charMask = imgIntensity * (1.0 - spotlight * 0.9);
     
-    float flicker = snoise(st * 3.0 + u_time * 0.5) * 0.2;
+    float flicker = snoise(st * 3.0 + scaledTime * 0.5) * 0.2;
     charMask = clamp(charMask + flicker, 0.0, 1.0);
 
-    vec3 blue1 = vec3(0.05, 0.1, 0.3);
-    vec3 blue4 = vec3(0.14, 0.39, 1.0); 
-    vec3 charColor = mix(blue1, blue4, charMask * 1.5);
-
+    vec3 charColor = mix(u_colorDark, u_colorLight, charMask * 1.5);
     vec3 finalColor = mix(finalBg, charColor, charAlpha * smoothstep(0.05, 0.4, charMask));
+    
     gl_FragColor = vec4(finalColor, 1.0);
   }
 `;
-
 
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -259,12 +164,49 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop' }: { imageSrc?: string }) {
+export interface WebGLAsciiProps {
+  imageSrc?: string;
+  chars?: string[];
+  gridResolution?: number;
+  interactive?: boolean;
+  speed?: number;
+  colorDark?: string;
+  colorLight?: string;
+}
+
+export function WebGLAscii({ 
+  imageSrc = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop',
+  chars = ['2', 'e', '+', '=', '*', '/', '#', '@', '%', '&'],
+  gridResolution = 70.0,
+  interactive = true,
+  speed = 1.0,
+  colorDark = "#0d1a4d",
+  colorLight = "#2463ff"
+}: WebGLAsciiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const targetMouse = useRef({ x: 0, y: 0 });
+  const currentMouse = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Track mouse dynamically over the canvas
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      targetMouse.current = {
+        x: e.clientX - rect.left,
+        y: rect.height - (e.clientY - rect.top) // Flip Y for WebGL coordinates
+      };
+    };
+
+    if (interactive) {
+      window.addEventListener('mousemove', handleMouseMove);
+      // Initialize to center
+      const rect = canvas.getBoundingClientRect();
+      targetMouse.current = { x: rect.width / 2, y: rect.height / 2 };
+      currentMouse.current = { x: rect.width / 2, y: rect.height / 2 };
+    }
 
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
     if (!gl) {
@@ -272,8 +214,7 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
       return;
     }
 
-    // 1. Generate ASCII sprite map
-    const chars = ['2', 'e', '+', '=', '*', '/'];
+    // 1. Generate ASCII sprite map dynamically based on props
     const charSize = 64;
     const spriteCanvas = document.createElement('canvas');
     spriteCanvas.width = charSize * chars.length;
@@ -320,8 +261,17 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
     const charsLocation = gl.getUniformLocation(program, 'u_chars');
     const imageLocation = gl.getUniformLocation(program, 'u_image');
     const imageLoadedLocation = gl.getUniformLocation(program, 'u_imageLoaded');
+    
+    // Custom Prop Locations
+    const mouseLocation = gl.getUniformLocation(program, 'u_mouse');
+    const enableMouseLocation = gl.getUniformLocation(program, 'u_enableMouse');
+    const gridLocation = gl.getUniformLocation(program, 'u_grid');
+    const charCountLocation = gl.getUniformLocation(program, 'u_charCount');
+    const speedLocation = gl.getUniformLocation(program, 'u_speed');
+    const colorDarkLocation = gl.getUniformLocation(program, 'u_colorDark');
+    const colorLightLocation = gl.getUniformLocation(program, 'u_colorLight');
 
-    // 5. Upload Sprite Texture (Texture Unit 0)
+    // 5. Upload Sprite Texture
     const spriteTexture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, spriteTexture);
@@ -332,16 +282,13 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.uniform1i(charsLocation, 0);
 
-    // 6. Setup Background Image Texture (Texture Unit 1)
+    // 6. Setup Background Image Texture
     const bgTexture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, bgTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
     gl.uniform1i(imageLocation, 1);
     gl.uniform1i(imageLoadedLocation, 0);
-
-    let imgWidth = 1;
-    let imgHeight = 1;
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -355,44 +302,55 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-      imgWidth = img.width;
-      imgHeight = img.height;
-      gl.uniform2f(imgResolutionLocation, imgWidth, imgHeight);
+      gl.uniform2f(imgResolutionLocation, img.width, img.height);
       gl.uniform1i(imageLoadedLocation, 1);
     };
 
     // 7. Render Loop
     let animationFrameId: number;
     let startTime = performance.now();
+    const rgbDark = hexToRgb(colorDark);
+    const rgbLight = hexToRgb(colorLight);
 
-    const resize = () => {
+    const render = (time: number) => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = canvas.clientWidth * dpr;
       const height = canvas.clientHeight * dpr;
+      
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
         gl.viewport(0, 0, width, height);
       }
-    };
-
-    const render = (time: number) => {
-      resize();
 
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
+      // Lerp Mouse for smooth follow
+      currentMouse.current.x += (targetMouse.current.x - currentMouse.current.x) * 0.1;
+      currentMouse.current.y += (targetMouse.current.y - currentMouse.current.y) * 0.1;
+
+      // Pass updated uniforms
       gl.uniform1f(timeLocation, (time - startTime) * 0.001);
       gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+      gl.uniform2f(mouseLocation, currentMouse.current.x * dpr, currentMouse.current.y * dpr);
+      
+      // Static custom props
+      gl.uniform1f(enableMouseLocation, interactive ? 1.0 : 0.0);
+      gl.uniform1f(gridLocation, gridResolution);
+      gl.uniform1f(charCountLocation, chars.length);
+      gl.uniform1f(speedLocation, speed);
+      gl.uniform3f(colorDarkLocation, rgbDark[0], rgbDark[1], rgbDark[2]);
+      gl.uniform3f(colorLightLocation, rgbLight[0], rgbLight[1], rgbLight[2]);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-
       animationFrameId = requestAnimationFrame(render);
     };
 
     animationFrameId = requestAnimationFrame(render);
 
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
       gl.deleteProgram(program);
       gl.deleteShader(vertexShader);
@@ -401,7 +359,7 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
       gl.deleteTexture(bgTexture);
       gl.deleteBuffer(positionBuffer);
     };
-  }, [imageSrc]);
+  }, [imageSrc, chars, gridResolution, interactive, speed, colorDark, colorLight]);
 
   return (
     <canvas
@@ -412,37 +370,48 @@ export function WebGLAscii({ imageSrc = 'https://images.unsplash.com/photo-15507
   );
 }
 
-
 export const AsciiShaderHero = ({ 
   children, 
-  imageSrc = "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop" 
+  ...webGLProps
 }: { 
-  children?: React.ReactNode, 
-  imageSrc?: string 
-}) => {
+  children?: React.ReactNode
+} & WebGLAsciiProps) => {
   return (
     <div className="relative w-full h-full bg-black overflow-hidden font-sans">
-      
-      {/* Background WebGL ASCII Layer */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <WebGLAscii imageSrc={imageSrc} />
+      <div className="absolute inset-0 z-0 pointer-events-auto">
+        <WebGLAscii {...webGLProps} />
       </div>
-
-      {/* Content Overlay */}
-      <div className="relative z-10 w-full h-full flex items-center justify-start px-8 md:px-16 lg:px-32">
+      <div className="relative z-10 w-full h-full flex items-center justify-start px-8 md:px-16 lg:px-32 pointer-events-none">
         {children}
       </div>
-      
     </div>
   );
 };
 
-
 export default function App() {
   return (
     <div className="w-screen h-screen m-0 p-0 overflow-hidden bg-black text-white">
-      <AsciiShaderHero imageSrc="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop">
-        {/* The overlay card has been removed */}
+      <AsciiShaderHero 
+        // 1. Image
+        imageSrc="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop"
+        
+        // 2. Cursor Interaction (true = follows cursor seamlessly, false = standard blob noise animation)
+        interactive={true} 
+        
+        // 3. Grid sizing / fidelity (default is 70)
+        gridResolution={85} 
+        
+        // 4. Character Set Mapping (Left is darkest area mapping, Right is brightest)
+        chars={['-', '+', '>', '<', '*', '#', '@']}
+        
+        // 5. Colors (Hex codes seamlessly map to the shader output)
+        colorDark="#111827" 
+        colorLight="#10b981" 
+        
+        // 6. Overall Speed (Affects flicker and secondary noise)
+        speed={1.5}
+      >
+
       </AsciiShaderHero>
     </div>
   );
