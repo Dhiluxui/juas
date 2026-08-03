@@ -4,19 +4,37 @@
   "description": "Dynamic focus-reveal text animation with customizable title, subtitle, loop timing, and typography colors.",
   "category": "Text Animations",
   "tags": [
-    "text-animation",
-    "kinetic",
-    "focus",
-    "react"
+    "React",
+    "Tailwind CSS",
+    "TypeScript",
+    "CSS Animations",
+    "Inline Styles",
+    "useState",
+    "useEffect",
+    "Blur & Filter",
+    "Text Animation",
+    "Accessible",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "CSS Animations",
+    "Inline Styles",
+    "useState",
+    "useEffect",
+    "Blur & Filter",
+    "Text Animation",
+    "Accessible",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/kinetic-motion-focus/index.jsx",
-  "created_at": "2026-08-02T08:51:55.470Z"
+  "created_at": "2026-08-03T22:51:27.800Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/kinetic-motion-focus/video.webm"
 }
