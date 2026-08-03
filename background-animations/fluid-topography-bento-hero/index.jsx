@@ -1,25 +1,23 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
-export interface AmbientAuraWallpaperProps {
-  /** @title Primary Glow Color */
+export interface FluidMotionWallpaperProps {
+  /** @title Primary Fluid Color */
   primaryColor?: string;
-  /** @title Secondary Glow Color */
+  /** @title Secondary Fluid Color */
   secondaryColor?: string;
-  /** @title Accent Color */
+  /** @title Accent Highlight Color */
   accentColor?: string;
   /** @title Background Color */
   backgroundColor?: string;
-  /** @title Animation Speed */
+  /** @title Wave Speed */
   speed?: number;
-  /** @title Glow Radius (px) */
-  glowRadius?: number;
-  /** @title Edge Border Thickness */
-  borderWidth?: number;
-  /** @title Show Floating Particles */
-  showParticles?: boolean;
-  /** @title Show Subtle Grid */
-  showGrid?: boolean;
+  /** @title Wave Complexity */
+  complexity?: number;
+  /** @title Grain Noise Overlay */
+  showGrain?: boolean;
+  /** @title Interactive Mouse Effect */
+  interactive?: boolean;
   /** @title Hero Title */
   title?: string;
   /** @title Hero Subtitle */
@@ -30,43 +28,31 @@ export interface AmbientAuraWallpaperProps {
   className?: string;
 }
 
-export function AmbientAuraWallpaper({
-  primaryColor = '#00f0ff',
-  secondaryColor = '#3b82f6',
-  accentColor = '#8b5cf6',
+export function FluidMotionWallpaper({
+  primaryColor = '#3b82f6',
+  secondaryColor = '#8b5cf6',
+  accentColor = '#06b6d4',
   backgroundColor = '#030712',
-  speed = 1,
-  glowRadius = 40,
-  borderWidth = 3,
-  showParticles = true,
-  showGrid = true,
-  title = "NEXT-GEN WALLPAPER",
-  subtitle = "Fluid ambient border motion background with dynamic neon aura effects.",
+  speed = 1.0,
+  complexity = 3,
+  showGrain = true,
+  interactive = true,
+  title = "AURORA FLUID WALLPAPER",
+  subtitle = "Dynamic organic liquid motion background with ambient color blending.",
   children,
   className = '',
-}: AmbientAuraWallpaperProps) {
+}: FluidMotionWallpaperProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animationFrameId: number;
     let time = 0;
-
-    const particleCount = 40;
-    const particles = Array.from({ length: particleCount }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      size: Math.random() * 2 + 0.5,
-      speedX: (Math.random() - 0.5) * 0.0003,
-      speedY: (Math.random() - 0.5) * 0.0003,
-      alpha: Math.random() * 0.5 + 0.2,
-      pulseSpeed: Math.random() * 0.02 + 0.01,
-    }));
 
     const hexToRgb = (hex: string) => {
       const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -78,15 +64,28 @@ export function AmbientAuraWallpaper({
             g: parseInt(result[2], 16),
             b: parseInt(result[3], 16),
           }
-        : { r: 0, g: 240, b: 255 };
+        : { r: 59, g: 130, b: 246 };
     };
 
-    const rgb1 = hexToRgb(primaryColor);
-    const rgb2 = hexToRgb(secondaryColor);
-    const rgb3 = hexToRgb(accentColor);
+    const c1 = hexToRgb(primaryColor);
+    const c2 = hexToRgb(secondaryColor);
+    const c3 = hexToRgb(accentColor);
+    const bg = hexToRgb(backgroundColor);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!interactive) return;
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current.targetX = (e.clientX - rect.left) / rect.width;
+      mouseRef.current.targetY = (e.clientY - rect.top) / rect.height;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
 
     const render = () => {
-      time += 0.01 * speed;
+      time += 0.008 * speed;
+
+      mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
+      mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = canvas.clientWidth;
@@ -103,133 +102,104 @@ export function AmbientAuraWallpaper({
       ctx.fillStyle = backgroundColor;
       ctx.fillRect(0, 0, width, height);
 
-      if (showGrid) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-        ctx.lineWidth = 1;
-        const gridSize = 40;
-        for (let x = 0; x < width; x += gridSize) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-        }
-        for (let y = 0; y < height; y += gridSize) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-          ctx.stroke();
-        }
-      }
+      const mx = mouseRef.current.x * width;
+      const my = mouseRef.current.y * height;
 
-      if (showParticles) {
-        particles.forEach((p) => {
-          p.x += p.speedX * speed;
-          p.y += p.speedY * speed;
-
-          if (p.x < 0) p.x = 1;
-          if (p.x > 1) p.x = 0;
-          if (p.y < 0) p.y = 1;
-          if (p.y > 1) p.y = 0;
-
-          const px = p.x * width;
-          const py = p.y * height;
-          const currentAlpha = Math.abs(Math.sin(time * p.pulseSpeed)) * p.alpha;
-
-          ctx.beginPath();
-          ctx.arc(px, py, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${currentAlpha})`;
-          ctx.fill();
-        });
-      }
-
-      const pad = 12;
-      const rectW = width - pad * 2;
-      const rectH = height - pad * 2;
-      const rx = pad;
-      const ry = pad;
-      const cornerRadius = 16;
-
-      const passes = [
-        { blur: glowRadius * 1.5, alpha: 0.35, width: borderWidth * 6 },
-        { blur: glowRadius * 0.8, alpha: 0.6, width: borderWidth * 3 },
-        { blur: glowRadius * 0.3, alpha: 0.85, width: borderWidth * 1.5 },
-        { blur: 4, alpha: 1.0, width: borderWidth },
+      const nodes = [
+        {
+          x: width * 0.3 + Math.sin(time * 0.7) * width * 0.2 + (mx - width * 0.5) * 0.1,
+          y: height * 0.3 + Math.cos(time * 0.5) * height * 0.15 + (my - height * 0.5) * 0.1,
+          radius: Math.min(width, height) * 0.55,
+          color: `rgba(${c1.r}, ${c1.g}, ${c1.b}, 0.65)`,
+        },
+        {
+          x: width * 0.7 + Math.cos(time * 0.6) * width * 0.25 - (mx - width * 0.5) * 0.15,
+          y: height * 0.6 + Math.sin(time * 0.8) * height * 0.2 - (my - height * 0.5) * 0.15,
+          radius: Math.min(width, height) * 0.6,
+          color: `rgba(${c2.r}, ${c2.g}, ${c2.b}, 0.55)`,
+        },
+        {
+          x: width * 0.5 + Math.sin(time * 1.1) * width * 0.3,
+          y: height * 0.4 + Math.cos(time * 0.9) * height * 0.25,
+          radius: Math.min(width, height) * 0.45,
+          color: `rgba(${c3.r}, ${c3.g}, ${c3.b}, 0.45)`,
+        },
+        {
+          x: mx,
+          y: my,
+          radius: Math.min(width, height) * 0.3,
+          color: `rgba(${c1.r}, ${c1.g}, ${c1.b}, 0.3)`,
+        },
       ];
 
-      const colorProgress = (Math.sin(time * 0.5) + 1) / 2;
-      const currR = Math.round(rgb1.r + (rgb2.r - rgb1.r) * colorProgress);
-      const currG = Math.round(rgb1.g + (rgb2.g - rgb1.g) * colorProgress);
-      const currB = Math.round(rgb1.b + (rgb2.b - rgb1.b) * colorProgress);
+      ctx.globalCompositeOperation = 'screen';
 
-      passes.forEach((pass) => {
-        ctx.save();
-        ctx.shadowColor = `rgb(${currR}, ${currG}, ${currB})`;
-        ctx.shadowBlur = pass.blur;
-        ctx.strokeStyle = `rgba(${currR}, ${currG}, ${currB}, ${pass.alpha})`;
-        ctx.lineWidth = pass.width;
+      nodes.forEach((node) => {
+        const grad = ctx.createRadialGradient(
+          node.x,
+          node.y,
+          0,
+          node.x,
+          node.y,
+          node.radius
+        );
+        grad.addColorStop(0, node.color);
+        grad.addColorStop(0.5, node.color.replace(/[\d\.]+\)$/, '0.25)'));
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
 
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(rx, ry, rectW, rectH, cornerRadius);
-        } else {
-          ctx.rect(rx, ry, rectW, rectH);
-        }
-        ctx.stroke();
-        ctx.restore();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fill();
       });
 
-      const perimeter = (rectW + rectH) * 2;
-      const headPos = (time * 180) % perimeter;
-      const tailLength = perimeter * 0.25;
+      ctx.globalCompositeOperation = 'source-over';
+      const waves = Math.max(1, Math.min(6, complexity));
 
-      ctx.save();
-      ctx.lineWidth = borderWidth * 2;
-      ctx.shadowColor = `rgb(${rgb3.r}, ${rgb3.g}, ${rgb3.b})`;
-      ctx.shadowBlur = glowRadius;
-
-      const getPointAt = (dist: number) => {
-        let d = (dist + perimeter) % perimeter;
-        if (d < rectW) return { x: rx + d, y: ry };
-        d -= rectW;
-        if (d < rectH) return { x: rx + rectW, y: ry + d };
-        d -= rectH;
-        if (d < rectW) return { x: rx + rectW - d, y: ry + rectH };
-        d -= rectW;
-        return { x: rx, y: ry + rectH - d };
-      };
-
-      const numSegments = 60;
-      for (let i = 0; i < numSegments; i++) {
-        const segDist = headPos - (i / numSegments) * tailLength;
-        const p1 = getPointAt(segDist);
-        const p2 = getPointAt(segDist - tailLength / numSegments);
-
-        const segAlpha = (1 - i / numSegments) * 0.9;
-        ctx.strokeStyle = `rgba(${rgb3.r}, ${rgb3.g}, ${rgb3.b}, ${segAlpha})`;
+      for (let w = 0; w < waves; w++) {
         ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
+        const waveY = height * (0.2 + (w / waves) * 0.6);
+        ctx.moveTo(0, height);
+
+        for (let x = 0; x <= width; x += 15) {
+          const freq = 0.003 + w * 0.001;
+          const amp = 30 + w * 15;
+          const y =
+            waveY +
+            Math.sin(x * freq + time * (1 + w * 0.3)) * amp +
+            Math.cos(x * 0.002 - time * 0.5) * 20;
+
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.closePath();
+
+        const waveGrad = ctx.createLinearGradient(0, waveY - 50, width, waveY + 150);
+        waveGrad.addColorStop(0, `rgba(${c1.r}, ${c1.g}, ${c1.b}, ${0.08 - w * 0.01})`);
+        waveGrad.addColorStop(0.5, `rgba(${c2.r}, ${c2.g}, ${c2.b}, ${0.05 - w * 0.01})`);
+        waveGrad.addColorStop(1, `rgba(${bg.r}, ${bg.g}, ${bg.b}, 0.2)`);
+
+        ctx.fillStyle = waveGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(${c3.r}, ${c3.g}, ${c3.b}, ${0.25 - w * 0.03})`;
+        ctx.lineWidth = 1.5;
         ctx.stroke();
       }
-      ctx.restore();
-
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const innerRadius = Math.min(width, height) * 0.2;
-      const outerRadius = Math.max(width, height) * 0.65;
 
       const vignette = ctx.createRadialGradient(
-        centerX,
-        centerY,
-        innerRadius,
-        centerX,
-        centerY,
-        outerRadius
+        width / 2,
+        height / 2,
+        Math.min(width, height) * 0.3,
+        width / 2,
+        height / 2,
+        Math.max(width, height) * 0.75
       );
-      vignette.addColorStop(0, 'rgba(3, 7, 18, 0.4)');
-      vignette.addColorStop(0.7, 'rgba(3, 7, 18, 0.85)');
-      vignette.addColorStop(1, 'rgba(3, 7, 18, 0.98)');
-
+      vignette.addColorStop(0, 'rgba(0,0,0,0)');
+      vignette.addColorStop(1, `rgba(${bg.r}, ${bg.g}, ${bg.b}, 0.8)`);
       ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, width, height);
 
@@ -241,16 +211,23 @@ export function AmbientAuraWallpaper({
     render();
 
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [primaryColor, secondaryColor, accentColor, backgroundColor, speed, glowRadius, borderWidth, showParticles, showGrid]);
+  }, [primaryColor, secondaryColor, accentColor, backgroundColor, speed, complexity, interactive]);
 
   return (
     <div className={`relative w-full h-full min-h-[500px] overflow-hidden bg-[#030712] font-sans flex flex-col items-center justify-center p-6 ${className}`}>
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none z-0"
-      />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-auto z-0" />
+
+      {showGrain && (
+        <div
+          className="absolute inset-0 pointer-events-none z-[1] opacity-25 mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          }}
+        />
+      )}
 
       <div className="relative z-10 max-w-3xl text-center flex flex-col items-center justify-center space-y-6 p-4">
         {children || (
@@ -259,17 +236,17 @@ export function AmbientAuraWallpaper({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs tracking-wider font-mono text-cyan-400 uppercase shadow-inner"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-xs tracking-wider font-mono text-cyan-300 uppercase shadow-lg"
             >
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              Motion Background Wallpaper
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              Fluid Motion Wallpaper
             </motion.div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
-              className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white drop-shadow-sm"
+              className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white drop-shadow-md"
             >
               {title}
             </motion.h1>
@@ -278,7 +255,7 @@ export function AmbientAuraWallpaper({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
-              className="text-base sm:text-lg text-slate-300 max-w-xl font-normal leading-relaxed"
+              className="text-base sm:text-lg text-slate-200 max-w-xl font-normal leading-relaxed drop-shadow"
             >
               {subtitle}
             </motion.p>
@@ -289,11 +266,11 @@ export function AmbientAuraWallpaper({
               transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
               className="flex items-center gap-4 pt-2"
             >
-              <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-sm shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                Get Started
+              <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white font-medium text-sm shadow-xl shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Explore Motion
               </button>
-              <button className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 font-medium text-sm backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
-                Explore Wallpaper
+              <button className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-medium text-sm backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Custom Background
               </button>
             </motion.div>
           </>
@@ -303,4 +280,4 @@ export function AmbientAuraWallpaper({
   );
 }
 
-export default AmbientAuraWallpaper;
+export default FluidMotionWallpaper;
