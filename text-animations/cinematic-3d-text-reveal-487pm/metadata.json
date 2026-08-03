@@ -1,7 +1,7 @@
 {
   "slug": "cinematic-3d-text-reveal-487pm",
   "name": "Cinematic 3D Text Reveal",
-  "description": "A 3D perspective text reveal component featuring stagger animations, blur filters, rotating entrances/exits, and custom aurora text highlights with continuous looping.",
+  "description": "3D perspective text reveal with rotation, blur transitions, shimmer effects, and configurable line texts and timing.",
   "category": "Text Animations",
   "tags": [
     "React",
@@ -34,7 +34,7 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/cinematic-3d-text-reveal-487pm/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/cinematic-3d-text-reveal-487pm/index.jsx",
-  "created_at": "2026-08-02T06:10:01.319Z",
+  "created_at": "2026-08-03T22:49:34.101Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/cinematic-3d-text-reveal-487pm/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/cinematic-3d-text-reveal-487pm/video.webm"
 }
