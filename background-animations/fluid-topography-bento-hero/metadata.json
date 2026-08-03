@@ -1,13 +1,13 @@
 {
   "slug": "fluid-topography-bento-hero",
   "name": "Fluid Topography Bento",
-  "description": "A high-performance 2D wallpaper motion background featuring animated glowing border aura, perimeter pulse waves, floating ambient dust, and subtle background grid.",
+  "description": "A dynamic liquid motion background wallpaper featuring organic fluid mesh gradients, animated wave topography, subtle noise grain texture, and interactive mouse parallax.",
   "category": "Background Animations",
   "tags": [
     "wallpaper",
     "motion-background",
-    "ambient-glow",
-    "border-animation",
+    "fluid-aurora",
+    "mesh-gradient",
     "framer-motion"
   ],
   "tech_stack": [
@@ -20,5 +20,5 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-topography-bento-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/fluid-topography-bento-hero/index.jsx",
-  "created_at": "2026-08-03T23:07:56.120Z"
+  "created_at": "2026-08-03T23:12:22.999Z"
 }
