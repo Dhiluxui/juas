@@ -1,338 +1,306 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
+export interface AmbientAuraWallpaperProps {
+  /** @title Primary Glow Color */
+  primaryColor?: string;
+  /** @title Secondary Glow Color */
+  secondaryColor?: string;
+  /** @title Accent Color */
+  accentColor?: string;
+  /** @title Background Color */
+  backgroundColor?: string;
+  /** @title Animation Speed */
+  speed?: number;
+  /** @title Glow Radius (px) */
+  glowRadius?: number;
+  /** @title Edge Border Thickness */
+  borderWidth?: number;
+  /** @title Show Floating Particles */
+  showParticles?: boolean;
+  /** @title Show Subtle Grid */
+  showGrid?: boolean;
+  /** @title Hero Title */
+  title?: string;
+  /** @title Hero Subtitle */
+  subtitle?: string;
+  /** @title Children Content */
+  children?: React.ReactNode;
+  /** @title Extra Class Name */
+  className?: string;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
+export function AmbientAuraWallpaper({
+  primaryColor = '#00f0ff',
+  secondaryColor = '#3b82f6',
+  accentColor = '#8b5cf6',
+  backgroundColor = '#030712',
+  speed = 1,
+  glowRadius = 40,
+  borderWidth = 3,
+  showParticles = true,
+  showGrid = true,
+  title = "NEXT-GEN WALLPAPER",
+  subtitle = "Fluid ambient border motion background with dynamic neon aura effects.",
+  children,
   className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+}: AmbientAuraWallpaperProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
     let animationFrameId: number;
-    let startTime = performance.now();
+    let time = 0;
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
+    const particleCount = 40;
+    const particles = Array.from({ length: particleCount }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      size: Math.random() * 2 + 0.5,
+      speedX: (Math.random() - 0.5) * 0.0003,
+      speedY: (Math.random() - 0.5) * 0.0003,
+      alpha: Math.random() * 0.5 + 0.2,
+      pulseSpeed: Math.random() * 0.02 + 0.01,
+    }));
+
+    const hexToRgb = (hex: string) => {
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+      return result
+        ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+          }
+        : { r: 0, g: 240, b: 255 };
     };
 
-    const render = (time: number) => {
-      resize();
+    const rgb1 = hexToRgb(primaryColor);
+    const rgb2 = hexToRgb(secondaryColor);
+    const rgb3 = hexToRgb(accentColor);
 
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
+    const render = () => {
+      time += 0.01 * speed;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+
+      if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
       }
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-      const t = (time - startTime) * 0.001;
-      
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, width, height);
 
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
+      if (showGrid) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        const gridSize = 40;
+        for (let x = 0; x < width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
       }
 
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      if (showParticles) {
+        particles.forEach((p) => {
+          p.x += p.speedX * speed;
+          p.y += p.speedY * speed;
+
+          if (p.x < 0) p.x = 1;
+          if (p.x > 1) p.x = 0;
+          if (p.y < 0) p.y = 1;
+          if (p.y > 1) p.y = 0;
+
+          const px = p.x * width;
+          const py = p.y * height;
+          const currentAlpha = Math.abs(Math.sin(time * p.pulseSpeed)) * p.alpha;
+
+          ctx.beginPath();
+          ctx.arc(px, py, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${currentAlpha})`;
+          ctx.fill();
+        });
+      }
+
+      const pad = 12;
+      const rectW = width - pad * 2;
+      const rectH = height - pad * 2;
+      const rx = pad;
+      const ry = pad;
+      const cornerRadius = 16;
+
+      const passes = [
+        { blur: glowRadius * 1.5, alpha: 0.35, width: borderWidth * 6 },
+        { blur: glowRadius * 0.8, alpha: 0.6, width: borderWidth * 3 },
+        { blur: glowRadius * 0.3, alpha: 0.85, width: borderWidth * 1.5 },
+        { blur: 4, alpha: 1.0, width: borderWidth },
+      ];
+
+      const colorProgress = (Math.sin(time * 0.5) + 1) / 2;
+      const currR = Math.round(rgb1.r + (rgb2.r - rgb1.r) * colorProgress);
+      const currG = Math.round(rgb1.g + (rgb2.g - rgb1.g) * colorProgress);
+      const currB = Math.round(rgb1.b + (rgb2.b - rgb1.b) * colorProgress);
+
+      passes.forEach((pass) => {
+        ctx.save();
+        ctx.shadowColor = `rgb(${currR}, ${currG}, ${currB})`;
+        ctx.shadowBlur = pass.blur;
+        ctx.strokeStyle = `rgba(${currR}, ${currG}, ${currB}, ${pass.alpha})`;
+        ctx.lineWidth = pass.width;
+
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(rx, ry, rectW, rectH, cornerRadius);
+        } else {
+          ctx.rect(rx, ry, rectW, rectH);
+        }
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      const perimeter = (rectW + rectH) * 2;
+      const headPos = (time * 180) % perimeter;
+      const tailLength = perimeter * 0.25;
+
+      ctx.save();
+      ctx.lineWidth = borderWidth * 2;
+      ctx.shadowColor = `rgb(${rgb3.r}, ${rgb3.g}, ${rgb3.b})`;
+      ctx.shadowBlur = glowRadius;
+
+      const getPointAt = (dist: number) => {
+        let d = (dist + perimeter) % perimeter;
+        if (d < rectW) return { x: rx + d, y: ry };
+        d -= rectW;
+        if (d < rectH) return { x: rx + rectW, y: ry + d };
+        d -= rectH;
+        if (d < rectW) return { x: rx + rectW - d, y: ry + rectH };
+        d -= rectW;
+        return { x: rx, y: ry + rectH - d };
+      };
+
+      const numSegments = 60;
+      for (let i = 0; i < numSegments; i++) {
+        const segDist = headPos - (i / numSegments) * tailLength;
+        const p1 = getPointAt(segDist);
+        const p2 = getPointAt(segDist - tailLength / numSegments);
+
+        const segAlpha = (1 - i / numSegments) * 0.9;
+        ctx.strokeStyle = `rgba(${rgb3.r}, ${rgb3.g}, ${rgb3.b}, ${segAlpha})`;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const innerRadius = Math.min(width, height) * 0.2;
+      const outerRadius = Math.max(width, height) * 0.65;
+
+      const vignette = ctx.createRadialGradient(
+        centerX,
+        centerY,
+        innerRadius,
+        centerX,
+        centerY,
+        outerRadius
+      );
+      vignette.addColorStop(0, 'rgba(3, 7, 18, 0.4)');
+      vignette.addColorStop(0.7, 'rgba(3, 7, 18, 0.85)');
+      vignette.addColorStop(1, 'rgba(3, 7, 18, 0.98)');
+
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.restore();
+
       animationFrameId = requestAnimationFrame(render);
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    render();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [primaryColor, secondaryColor, accentColor, backgroundColor, speed, glowRadius, borderWidth, showParticles, showGrid]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
+    <div className={`relative w-full h-full min-h-[500px] overflow-hidden bg-[#030712] font-sans flex flex-col items-center justify-center p-6 ${className}`}>
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none z-0"
+      />
+
+      <div className="relative z-10 max-w-3xl text-center flex flex-col items-center justify-center space-y-6 p-4">
+        {children || (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs tracking-wider font-mono text-cyan-400 uppercase shadow-inner"
+            >
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              Motion Background Wallpaper
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.1, ease: 'easeOut' }}
+              className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white drop-shadow-sm"
+            >
+              {title}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+              className="text-base sm:text-lg text-slate-300 max-w-xl font-normal leading-relaxed"
+            >
+              {subtitle}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+              className="flex items-center gap-4 pt-2"
+            >
+              <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium text-sm shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Get Started
+              </button>
+              <button className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white border border-white/10 font-medium text-sm backdrop-blur-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                Explore Wallpaper
+              </button>
+            </motion.div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
-
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
-    // Distance field to a rounded box
-    float sdRoundBox(vec3 p, vec3 b, float r) {
-        vec3 q = abs(p) - b;
-        return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0) - r;
-    }
-
-    // 2D Noise for the fluid floor
-    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
-    float noise(vec2 p) {
-        vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
-        return mix(mix(hash(i), hash(i+vec2(1.0, 0.0)), f.x), mix(hash(i+vec2(0.0, 1.0)), hash(i+vec2(1.0, 1.0)), f.x), f.y);
-    }
-    float fbm(vec2 p) {
-        float f = 0.0, a = 0.5;
-        mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
-        for(int i = 0; i < 4; i++) { f += a * noise(p); p = r * p * 2.0; a *= 0.5; }
-        return f;
-    }
-
-    float map(vec3 p) {
-        // FLUID TOPOGRAPHY FLOOR
-        float floorPlane = p.y + 3.0;
-        // Heavy, smooth displacement to look like thick mercury or paint
-        float displacement = fbm(p.xz * 0.2 + vec2(uTime * 0.1, uTime * 0.15)) * 3.0;
-        floorPlane -= displacement;
-        
-        // BENTO BOXES (Floating Apple-style glass UI cards)
-        // Array them in a grid
-        vec3 q = p;
-        q.xz = mod(q.xz, 6.0) - 3.0;
-        
-        // Make them bob up and down independently based on their grid ID
-        vec2 id = floor(p.xz / 6.0);
-        q.y -= sin(uTime + id.x * 2.0 + id.y * 3.0) * 1.5;
-        
-        // The boxes are flat, wide, and heavily rounded (premium Apple design aesthetic)
-        float bentoBoxes = sdRoundBox(q, vec3(2.0, 0.1, 2.0), 0.3);
-        
-        // Smooth merge the floor and the boxes slightly if they touch
-        float res = min(floorPlane, bentoBoxes);
-        return res;
-    }
-
-    vec3 getNormal(vec3 p) {
-        vec2 e = vec2(0.01, 0.0);
-        return normalize(vec3(
-            map(p+e.xyy)-map(p-e.xyy), 
-            map(p+e.yxy)-map(p-e.yxy), 
-            map(p+e.yyx)-map(p-e.yyx)
-        ));
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Isometric / High-angle camera
-        vec3 ro = vec3(uTime * 2.0, 15.0, uTime * 2.0 - 15.0);
-        vec3 rd = normalize(vec3(uv.x, uv.y - 0.5, 1.0));
-        
-        // Tilt camera down 45 degrees
-        rd.yz *= rot(0.8);
-        
-        vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
-        }
-        
-        float dTotal = 0.0;
-        vec3 p;
-        
-        for(int i = 0; i < 90; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            if(d < 0.01 || dTotal > 50.0) break;
-            dTotal += d * 0.8;
-        }
-        
-        vec3 col = vec3(0.02); // Dark studio background
-        
-        if (dTotal < 50.0) {
-            vec3 n = getNormal(p);
-            
-            // Determine if we hit a floating bento box or the fluid floor
-            // The boxes hover around y=0, floor is around y=-3.
-            if (p.y > -1.0) {
-                // BENTO BOX MATERIAL (Frosted Glass / Premium White Plastic)
-                vec3 baseCol = vec3(0.9, 0.95, 1.0);
-                
-                vec3 l = normalize(vec3(1.0, 1.0, -0.5));
-                float diff = max(dot(n, l), 0.0);
-                
-                vec3 ref = reflect(rd, n);
-                float spec = pow(max(dot(ref, l), 0.0), 32.0);
-                
-                // Add a subtle glowing cyan edge
-                float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-                
-                col = baseCol * diff * 0.2; // Keep it dark for dark mode
-                col += vec3(1.0) * spec * 0.5;
-                col += vec3(0.0, 0.5, 1.0) * fresnel * 1.5;
-            } else {
-                // FLUID TOPOGRAPHY MATERIAL (Dark Liquid Metal)
-                vec3 baseCol = vec3(0.01, 0.02, 0.04);
-                
-                vec3 l = normalize(vec3(1.0, 2.0, 1.0));
-                float diff = max(dot(n, l), 0.0);
-                
-                vec3 ref = reflect(rd, n);
-                float spec = pow(max(dot(ref, l), 0.0), 128.0);
-                
-                col = baseCol * diff;
-                col += vec3(0.0, 0.8, 1.0) * spec * 1.5; // Blue specular highlights on the fluid waves
-            }
-            
-            // Soft shadow/ambient occlusion based on height
-            float ao = clamp((p.y + 3.0) / 3.0, 0.2, 1.0);
-            col *= ao;
-            
-            // Fog
-            col = mix(col, vec3(0.02), smoothstep(20.0, 50.0, dTotal));
-        }
-        
-        col = pow(col, vec3(0.85)); // Gamma
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }
-  `
-};
-
-export const FluidTopographyBentoHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#000000] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.95) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+export default AmbientAuraWallpaper;
