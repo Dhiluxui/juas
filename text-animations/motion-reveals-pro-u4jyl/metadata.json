@@ -1,7 +1,7 @@
 {
   "slug": "motion-reveals-pro-u4jyl",
   "name": "Motion Reveals Pro",
-  "description": "A cinematic, character-staggered text reveal animation featuring smooth Apple-style easing, upward translation, blur transitions, and an automatic looping preview effect.",
+  "description": "Apple-style cinematic character rise animation with customizable text, stagger delay, and loop interval parameters.",
   "category": "Text Animations",
   "tags": [
     "React",
@@ -40,7 +40,7 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/motion-reveals-pro-u4jyl/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/text-animations/motion-reveals-pro-u4jyl/index.jsx",
-  "created_at": "2026-08-02T06:08:10.729Z",
+  "created_at": "2026-08-03T22:48:19.314Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/motion-reveals-pro-u4jyl/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/text-animations/motion-reveals-pro-u4jyl/video.webm"
 }
