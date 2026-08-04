@@ -1,0 +1,27 @@
+{
+  "slug": "quantum-chromatic-cyberpunk",
+  "name": "Quantum Chromatic Cyberpunk",
+  "description": "High-voltage cyberpunk matrix background featuring quantum grid warping, chromatic aberration rays, CRT scanlines, and cursor disruption pulse.",
+  "category": "Backgrounds",
+  "tags": [
+    "threejs",
+    "shader",
+    "motion",
+    "background",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "Three.js",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/quantum-chromatic-cyberpunk/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/quantum-chromatic-cyberpunk/index.jsx",
+  "created_at": "2026-08-04T12:50:25.520Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/quantum-chromatic-cyberpunk/thumbnail.svg"
+}
