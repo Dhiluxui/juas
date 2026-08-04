@@ -4,22 +4,37 @@
   "description": "A pure Three.js WebGL shader background featuring fluid neon blue fire warping, prismatic glass reflections, spark particles, and a dark center void for content placement.",
   "category": "Backgrounds",
   "tags": [
-    "threejs",
-    "shader",
-    "webgl",
-    "background",
-    "neon",
-    "fire"
+    "React",
+    "Three.js",
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "Particle System",
+    "useEffect",
+    "Glassmorphism",
+    "Noise / Randomness",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
     "Three.js",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "Particle System",
+    "useEffect",
+    "Glassmorphism",
+    "Noise / Randomness",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/neon-fire-shader-background/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/neon-fire-shader-background/index.jsx",
-  "created_at": "2026-08-03T23:41:36.389Z"
+  "created_at": "2026-08-04T00:48:58.169Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/neon-fire-shader-background/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/neon-fire-shader-background/video.webm"
 }
