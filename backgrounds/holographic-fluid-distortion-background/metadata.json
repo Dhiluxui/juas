@@ -1,0 +1,26 @@
+{
+  "slug": "holographic-fluid-distortion-background",
+  "name": "Holographic Fluid Distortion Background",
+  "description": "An interactive WebGL motion background featuring holographic fluid domain warping, smooth mouse distortion forces, and iridescent specular ridges.",
+  "category": "Backgrounds",
+  "tags": [
+    "threejs",
+    "shader",
+    "webgl",
+    "background",
+    "holographic",
+    "fluid",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "Three.js",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/holographic-fluid-distortion-background/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/holographic-fluid-distortion-background/index.jsx",
+  "created_at": "2026-08-04T13:21:02.612Z"
+}
