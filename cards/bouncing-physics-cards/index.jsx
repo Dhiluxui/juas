@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 
 export interface FloatingCardItem {
   id: string | number;
@@ -142,13 +142,13 @@ export function BouncingPhysicsCards({
 
     const rect = container.getBoundingClientRect();
     const width = rect.width || window.innerWidth;
-    const height = rect.height || 600;
+    const containerH = rect.height || 600;
 
     physicsRef.current = cards.map((card) => {
       const cardW = card.width || 200;
       const cardH = card.height || 140;
-      const posX = ((card.initialX ?? 50) / 100) * (width - cardW);
-      const posY = ((card.initialY ?? 50) / 100) * (height - cardH);
+      const posX = ((card.initialX ?? 50) / 100) * Math.max(1, width - cardW);
+      const posY = ((card.initialY ?? 50) / 100) * Math.max(1, containerH - cardH);
 
       const angle = Math.random() * Math.PI * 2;
       const speed = 0.3 + Math.random() * 0.4;
@@ -189,9 +189,7 @@ export function BouncingPhysicsCards({
         const cardEl = cardRefs.current[idx];
         if (!cardEl) return;
 
-        if (p.isDragging) {
-          // Velocity tracked during mouse move
-        } else {
+        if (!p.isDragging) {
           // 1. Apply Cursor Repulsion
           if (mouse.active) {
             const cardCenterX = p.x + p.width / 2;
@@ -244,13 +242,13 @@ export function BouncingPhysicsCards({
           p.x += p.vx;
           p.y += p.vy;
 
-          // 5. Container Boundary Collisions with Bounce
+          // 5. Container Boundary Collisions with Bounce & Clamping
           const bounce = -0.75;
           if (p.x < 0) {
             p.x = 0;
             p.vx *= bounce;
           } else if (p.x + p.width > containerW) {
-            p.x = containerW - p.width;
+            p.x = Math.max(0, containerW - p.width);
             p.vx *= bounce;
           }
 
@@ -258,7 +256,7 @@ export function BouncingPhysicsCards({
             p.y = 0;
             p.vy *= bounce;
           } else if (p.y + p.height > containerH) {
-            p.y = containerH - p.height;
+            p.y = Math.max(0, containerH - p.height);
             p.vy *= bounce;
           }
         }
@@ -274,13 +272,13 @@ export function BouncingPhysicsCards({
     return () => cancelAnimationFrame(animId);
   }, [repelRadius, repelForce]);
 
-  // Mouse / Touch Event Handlers
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  // Pointer position update helper
+  const updatePointer = useCallback((clientX: number, clientY: number) => {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
 
     mouseRef.current = { x: mx, y: my, active: true };
 
@@ -302,6 +300,11 @@ export function BouncingPhysicsCards({
     }
   }, []);
 
+  // Mouse Handlers
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    updatePointer(e.clientX, e.clientY);
+  }, [updatePointer]);
+
   const handleMouseLeave = useCallback(() => {
     mouseRef.current.active = false;
     if (activeDragIndexRef.current !== null) {
@@ -311,13 +314,20 @@ export function BouncingPhysicsCards({
     }
   }, []);
 
-  const handleMouseDownCard = (index: number, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Touch Handlers for Mobile Support
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      updatePointer(touch.clientX, touch.clientY);
+    }
+  }, [updatePointer]);
+
+  const handlePointerStart = (index: number, clientX: number, clientY: number) => {
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
 
     const p = physicsRef.current[index];
     if (!p) return;
@@ -333,7 +343,7 @@ export function BouncingPhysicsCards({
     activeDragIndexRef.current = index;
   };
 
-  const handleMouseUp = () => {
+  const handlePointerEnd = () => {
     if (activeDragIndexRef.current !== null) {
       const p = physicsRef.current[activeDragIndexRef.current];
       if (p) {
@@ -348,8 +358,11 @@ export function BouncingPhysicsCards({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      onMouseUp={handleMouseUp}
+      onMouseUp={handlePointerEnd}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handlePointerEnd}
       className={`relative w-full ${height} overflow-hidden rounded-3xl bg-slate-950 select-none font-sans ${className}`}
+      style={{ touchAction: 'none' }}
     >
       {/* Background Image & Dark Overlay */}
       {bgImageUrl && (
@@ -400,7 +413,16 @@ export function BouncingPhysicsCards({
           <div
             key={card.id}
             ref={(el) => (cardRefs.current[idx] = el)}
-            onMouseDown={(e) => handleMouseDownCard(idx, e)}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              handlePointerStart(idx, e.clientX, e.clientY);
+            }}
+            onTouchStart={(e) => {
+              e.stopPropagation();
+              if (e.touches.length > 0) {
+                handlePointerStart(idx, e.touches[0].clientX, e.touches[0].clientY);
+              }
+            }}
             style={{
               width: `${cardW}px`,
               height: `${cardH}px`,
