@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020005"/>
+      <stop offset="50%" stop-color="#0a001a"/>
+      <stop offset="100%" stop-color="#020005"/>
+    </linearGradient>
+    <radialGradient id="neon1" cx="30%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ff007f" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#7a00ff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="neon2" cx="70%" cy="60%" r="60%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#0044ff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg1)"/>
+  <circle cx="280" cy="220" r="180" fill="url(#neon1)"/>
+  <circle cx="520" cy="280" r="200" fill="url(#neon2)"/>
+  <path d="M100 250 Q 250 100 400 250 T 700 250" fill="none" stroke="#00f0ff" stroke-width="4" opacity="0.7"/>
+  <path d="M100 270 Q 250 400 400 270 T 700 270" fill="none" stroke="#ff007f" stroke-width="4" opacity="0.7"/>
+  <rect x="150" y="100" width="500" height="300" rx="24" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+  <path d="M 200 180 C 300 120, 400 320, 600 200" fill="none" stroke="url(#neon1)" stroke-width="8" stroke-linecap="round"/>
+</svg>
