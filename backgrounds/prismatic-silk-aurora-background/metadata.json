@@ -4,23 +4,31 @@
   "description": "A dark WebGL background component with sweeping volumetric silk ribbons, sharp prismatic ridge reflections, and a central cyan-blue aura.",
   "category": "Backgrounds",
   "tags": [
-    "threejs",
-    "shader",
-    "webgl",
-    "background",
-    "silk",
-    "aurora",
-    "prismatic"
+    "React",
+    "Three.js",
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
     "Three.js",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/prismatic-silk-aurora-background/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/prismatic-silk-aurora-background/index.jsx",
-  "created_at": "2026-08-04T00:10:42.271Z"
+  "created_at": "2026-08-04T00:51:20.490Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/prismatic-silk-aurora-background/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/prismatic-silk-aurora-background/video.webm"
 }
