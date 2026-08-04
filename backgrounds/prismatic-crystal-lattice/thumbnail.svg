@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020510"/>
+      <stop offset="50%" stop-color="#081028"/>
+      <stop offset="100%" stop-color="#020510"/>
+    </linearGradient>
+    <linearGradient id="cSpec" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="50%" stop-color="#7300&f"/>
+      <stop offset="100%" stop-color="#ff00aa"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg2)"/>
+  <polygon points="400,80 580,180 520,380 280,380 220,180" fill="none" stroke="url(#cSpec)" stroke-width="3" opacity="0.8"/>
+  <polygon points="400,140 500,210 460,320 340,320 300,210" fill="rgba(0,240,255,0.08)" stroke="#00f0ff" stroke-width="2"/>
+  <line x1="400" y1="80" x2="400" y2="140" stroke="url(#cSpec)" stroke-width="2"/>
+  <line x1="580" y1="180" x2="500" y2="210" stroke="url(#cSpec)" stroke-width="2"/>
+  <line x1="520" y1="380" x2="460" y2="320" stroke="url(#cSpec)" stroke-width="2"/>
+  <line x1="280" y1="380" x2="340" y2="320" stroke="url(#cSpec)" stroke-width="2"/>
+  <line x1="220" y1="180" x2="300" y2="210" stroke="url(#cSpec)" stroke-width="2"/>
+</svg>
