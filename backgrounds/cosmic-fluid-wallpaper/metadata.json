@@ -1,0 +1,27 @@
+{
+  "slug": "cosmic-fluid-wallpaper",
+  "name": "Cosmic Fluid Motion Wallpaper",
+  "description": "A high-end, performant WebGL animated motion background wallpaper for Juas.dev. Features domain-warped fluid dynamics, interactive cursor displacement, specular glass ridges, chromatic aberration, and cinematic vignette post-processing.",
+  "category": "Backgrounds",
+  "tags": [
+    "threejs",
+    "shader",
+    "motion",
+    "background",
+    "interactive",
+    "webgl"
+  ],
+  "tech_stack": [
+    "React",
+    "Three.js",
+    "WebGL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cosmic-fluid-wallpaper/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/cosmic-fluid-wallpaper/index.jsx",
+  "created_at": "2026-08-04T12:50:30.862Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cosmic-fluid-wallpaper/thumbnail.svg"
+}
