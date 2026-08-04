@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0a021a"/>
+      <stop offset="100%" stop-color="#020008"/>
+    </radialGradient>
+    <linearGradient id="fluid1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00d8ff" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#e010a0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffb020" stop-opacity="0.8"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="25" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <path d="M-100,250 C150,100 250,400 500,200 C650,80 750,350 900,250 C800,450 600,80 400,420 C200,364 0,480 -100,250 Z" fill="url(#fluid1)" filter="url(#glow)"/>
+  <path d="M-50,150 C200,350 350,50 600,280 C700,380 800,150 850,300 C750,480 500,400 300,450 C100,500 -50,300 -50,150 Z" fill="none" stroke="#00f0ff" stroke-width="4" opacity="0.6" filter="url(#glow)"/>
+  <circle cx="400" cy="250" r="180" fill="none" stroke="#ff00a0" stroke-width="2" opacity="0.4" stroke-dasharray="10 15"/>
+</svg>
