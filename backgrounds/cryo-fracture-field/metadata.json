@@ -1,0 +1,26 @@
+{
+  "slug": "cryo-fracture-field",
+  "name": "Cryo Fracture Field",
+  "description": "A scrolling Worley/Voronoi field where cell edges become glowing ice cracks with a slow pulsing rim light. Props: speed, iceColor, glowColor, scale, mouseReact.",
+  "category": "Backgrounds",
+  "tags": [
+    "webgl",
+    "shader",
+    "motion",
+    "background",
+    "interactive",
+    "voronoi",
+    "ice"
+  ],
+  "tech_stack": [
+    "React",
+    "WebGL2",
+    "GLSL"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cryo-fracture-field/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/cryo-fracture-field/index.jsx",
+  "created_at": "2026-08-04T13:52:32.571Z"
+}
