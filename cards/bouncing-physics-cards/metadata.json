@@ -1,0 +1,25 @@
+{
+  "slug": "bouncing-physics-cards",
+  "name": "Bouncing Physics Cards",
+  "description": "Interactive 2D physics floating cards that react to cursor hover repulsion, bounce inside the container, and can be grabbed and thrown with inertia. Supports text/image cards, glassmorphism, and animated center text.",
+  "category": "Cards",
+  "tags": [
+    "cards",
+    "physics",
+    "framer-motion",
+    "interactive",
+    "glassmorphism",
+    "hero"
+  ],
+  "tech_stack": [
+    "React",
+    "Tailwind CSS",
+    "Framer Motion"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/cards/bouncing-physics-cards/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/cards/bouncing-physics-cards/index.jsx",
+  "created_at": "2026-08-04T02:07:10.303Z"
+}
