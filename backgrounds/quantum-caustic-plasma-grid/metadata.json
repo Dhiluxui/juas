@@ -1,0 +1,26 @@
+{
+  "slug": "quantum-caustic-plasma-grid",
+  "name": "Quantum Caustic Plasma Grid",
+  "description": "A WebGL motion background featuring raymarched caustic plasma grids, interactive cursor warping, bioluminescent glow, and sparkle dust particles.",
+  "category": "Backgrounds",
+  "tags": [
+    "threejs",
+    "shader",
+    "webgl",
+    "background",
+    "caustic",
+    "plasma",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "Three.js",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/quantum-caustic-plasma-grid/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/quantum-caustic-plasma-grid/index.jsx",
+  "created_at": "2026-08-04T13:25:49.588Z"
+}
