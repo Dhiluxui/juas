@@ -1,0 +1,27 @@
+{
+  "slug": "prismatic-crystal-lattice",
+  "name": "Prismatic Crystal Lattice",
+  "description": "Crystalline WebGL background featuring Voronoi crystal lattice refractions, prismatic rainbow light dispersion, specular diamond highlights, and interactive cursor refraction shifts.",
+  "category": "Backgrounds",
+  "tags": [
+    "threejs",
+    "shader",
+    "motion",
+    "background",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "Three.js",
+    "WebGL",
+    "GLSL",
+    "Tailwind CSS"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/prismatic-crystal-lattice/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/prismatic-crystal-lattice/index.jsx",
+  "created_at": "2026-08-04T12:56:15.136Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/prismatic-crystal-lattice/thumbnail.svg"
+}
