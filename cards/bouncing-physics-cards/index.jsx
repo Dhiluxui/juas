@@ -1,498 +1,307 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-export interface FloatingCardItem {
-  id: string | number;
-  type?: 'text' | 'image';
-  title?: string;
-  subtitle?: string;
-  badge?: string;
-  imageUrl?: string;
-  bgGradient?: string;
-  textColor?: string;
-  width?: number;
-  height?: number;
-  initialX?: number; // 0 to 100 percentage
-  initialY?: number; // 0 to 100 percentage
-}
-
-export interface BouncingPhysicsCardsProps {
-  /** @title Center Title */
-  title?: string;
-  /** @title Center Subtitle */
-  subtitle?: string;
-  /** @title Show Center Content */
-  showCenterText?: boolean;
-  /** @title Card Items */
-  cards?: FloatingCardItem[];
-  /** @title Background Image URL */
-  bgImageUrl?: string;
-  /** @title Background Overlay Opacity */
-  bgOverlayOpacity?: number;
-  /** @title Glass Effect for Cards */
-  glassEffect?: boolean;
-  /** @title Repel Distance Radius */
-  repelRadius?: number;
-  /** @title Repel Force Multiplier */
-  repelForce?: number;
-  /** @title Container Height */
-  height?: string;
-  /** @title Extra Container Classes */
+export interface AbyssalFluidPlasmaProps {
+  /** Speed multiplier for fluid movement */
+  speed?: number;
+  /** Intensity of the glowing plasma folds */
+  intensity?: number;
+  /** Color of the electric blue plasma highlights in Hex */
+  electricBlue?: string;
+  /** Color of the cyan liquid highlights in Hex */
+  cyanHighlight?: string;
+  /** Intensity of the film grain post-processing (0.0 to 0.1) */
+  grainIntensity?: number;
+  /** Content overlay slot */
+  children?: React.ReactNode;
+  /** Additional CSS class names for wrapper container */
   className?: string;
 }
 
-const DEFAULT_CARDS: FloatingCardItem[] = [
-  {
-    id: 'card-1',
-    type: 'text',
-    badge: 'Design System',
-    title: 'Component Driven',
-    subtitle: 'Parameter-driven React components for modern web UI',
-    bgGradient: 'from-blue-600/30 to-cyan-500/30',
-    width: 220,
-    height: 140,
-    initialX: 12,
-    initialY: 18,
-  },
-  {
-    id: 'card-2',
-    type: 'image',
-    title: '3D Spatial Shader',
-    subtitle: 'Interactive Canvas',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
-    width: 200,
-    height: 240,
-    initialX: 75,
-    initialY: 15,
-  },
-  {
-    id: 'card-3',
-    type: 'text',
-    badge: 'Framer Motion',
-    title: 'Fluid Physics',
-    subtitle: 'Cursor hover repulsion & drag throwing inertia',
-    bgGradient: 'from-purple-600/30 to-pink-500/30',
-    width: 230,
-    height: 150,
-    initialX: 18,
-    initialY: 65,
-  },
-  {
-    id: 'card-4',
-    type: 'image',
-    title: 'Neon Prism',
-    subtitle: 'Generative Art',
-    imageUrl: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=600&q=80',
-    width: 210,
-    height: 220,
-    initialX: 72,
-    initialY: 62,
-  },
-  {
-    id: 'card-5',
-    type: 'text',
-    badge: 'Glassmorphism',
-    title: 'Backdrop Blur',
-    subtitle: 'High precision glass shadows and dynamic borders',
-    bgGradient: 'from-emerald-500/30 to-teal-600/30',
-    width: 210,
-    height: 135,
-    initialX: 45,
-    initialY: 78,
-  },
-];
+export function AbyssalFluidPlasma({
+  speed = 1.0,
+  intensity = 1.25,
+  electricBlue = '#0D99FF',
+  cyanHighlight = '#00F0FF',
+  grainIntensity = 0.02,
+  children,
+  className = '',
+}: AbyssalFluidPlasmaProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const mouseTargetRef = useRef<THREE.Vector2>(new THREE.Vector2(0.5, 0.5));
+  const mouseCurrentRef = useRef<THREE.Vector2>(new THREE.Vector2(0.5, 0.5));
 
-interface PhysicsState {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  width: number;
-  height: number;
-  isDragging: boolean;
-  dragOffsetX: number;
-  dragOffsetY: number;
-  lastMouseX: number;
-  lastMouseY: number;
-}
-
-export function BouncingPhysicsCards({
-  title = "Interactive Spatial Playground",
-  subtitle = "Hover to repel cards, grab to throw them around, and build immersive hero experiences.",
-  showCenterText = true,
-  cards = DEFAULT_CARDS,
-  bgImageUrl = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1920&q=80",
-  bgOverlayOpacity = 0.85,
-  glassEffect = true,
-  repelRadius = 220,
-  repelForce = 1.2,
-  height = "min-h-[680px]",
-  className = "",
-}: BouncingPhysicsCardsProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const physicsRef = useRef<PhysicsState[]>([]);
-  const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: -1000, y: -1000, active: false });
-  const activeDragIndexRef = useRef<number | null>(null);
-
-  // Initialize Physics State for Cards
   useEffect(() => {
-    const container = containerRef.current;
+    const container = mountRef.current;
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    const width = rect.width || window.innerWidth;
-    const containerH = rect.height || 600;
-
-    physicsRef.current = cards.map((card) => {
-      const cardW = card.width || 200;
-      const cardH = card.height || 140;
-      const posX = ((card.initialX ?? 50) / 100) * Math.max(1, width - cardW);
-      const posY = ((card.initialY ?? 50) / 100) * Math.max(1, containerH - cardH);
-
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.3 + Math.random() * 0.4;
-
-      return {
-        x: posX,
-        y: posY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        width: cardW,
-        height: cardH,
-        isDragging: false,
-        dragOffsetX: 0,
-        dragOffsetY: 0,
-        lastMouseX: 0,
-        lastMouseY: 0,
-      };
-    });
-  }, [cards]);
-
-  // Main Physics Loop
-  useEffect(() => {
-    let animId: number;
-
-    const updatePhysics = () => {
-      const container = containerRef.current;
-      if (!container) {
-        animId = requestAnimationFrame(updatePhysics);
-        return;
-      }
-
-      const rect = container.getBoundingClientRect();
-      const containerW = rect.width;
-      const containerH = rect.height;
-      const mouse = mouseRef.current;
-
-      physicsRef.current.forEach((p, idx) => {
-        const cardEl = cardRefs.current[idx];
-        if (!cardEl) return;
-
-        if (!p.isDragging) {
-          // 1. Apply Cursor Repulsion
-          if (mouse.active) {
-            const cardCenterX = p.x + p.width / 2;
-            const cardCenterY = p.y + p.height / 2;
-            const dx = cardCenterX - mouse.x;
-            const dy = cardCenterY - mouse.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < repelRadius && dist > 1) {
-              const force = ((repelRadius - dist) / repelRadius) * repelForce * 1.5;
-              const nx = dx / dist;
-              const ny = dy / dist;
-              p.vx += nx * force;
-              p.vy += ny * force;
-            }
-          }
-
-          // 2. Apply Inter-Card Separation / Repulsion
-          physicsRef.current.forEach((otherP, otherIdx) => {
-            if (idx === otherIdx) return;
-            const c1x = p.x + p.width / 2;
-            const c1y = p.y + p.height / 2;
-            const c2x = otherP.x + otherP.width / 2;
-            const c2y = otherP.y + otherP.height / 2;
-
-            const dx = c1x - c2x;
-            const dy = c1y - c2y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const minDist = (p.width + otherP.width) / 3;
-
-            if (dist < minDist && dist > 1) {
-              const overlap = (minDist - dist) * 0.05;
-              p.vx += (dx / dist) * overlap;
-              p.vy += (dy / dist) * overlap;
-            }
-          });
-
-          // 3. Friction & Ambient Speed Floor
-          p.vx *= 0.95;
-          p.vy *= 0.95;
-
-          const currentSpeed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-          if (currentSpeed < 0.25) {
-            const floatAngle = Math.random() * Math.PI * 2;
-            p.vx += Math.cos(floatAngle) * 0.05;
-            p.vy += Math.sin(floatAngle) * 0.05;
-          }
-
-          // 4. Update Position
-          p.x += p.vx;
-          p.y += p.vy;
-
-          // 5. Container Boundary Collisions with Bounce & Clamping
-          const bounce = -0.75;
-          if (p.x < 0) {
-            p.x = 0;
-            p.vx *= bounce;
-          } else if (p.x + p.width > containerW) {
-            p.x = Math.max(0, containerW - p.width);
-            p.vx *= bounce;
-          }
-
-          if (p.y < 0) {
-            p.y = 0;
-            p.vy *= bounce;
-          } else if (p.y + p.height > containerH) {
-            p.y = Math.max(0, containerH - p.height);
-            p.vy *= bounce;
-          }
-        }
-
-        // Apply Transform directly to DOM for 60fps performance
-        cardEl.style.transform = `translate3d(${p.x}px, ${p.y}px, 0px)`;
-      });
-
-      animId = requestAnimationFrame(updatePhysics);
+    // Helper: Convert Hex string to THREE.Vector3 RGB [0..1]
+    const hexToVec3 = (hex: string) => {
+      const cleanHex = hex.replace('#', '');
+      const fullHex =
+        cleanHex.length === 3
+          ? cleanHex
+              .split('')
+              .map((c) => c + c)
+              .join('')
+          : cleanHex;
+      const num = parseInt(fullHex, 16);
+      return new THREE.Vector3(
+        ((num >> 16) & 255) / 255,
+        ((num >> 8) & 255) / 255,
+        (num & 255) / 255
+      );
     };
 
-    animId = requestAnimationFrame(updatePhysics);
-    return () => cancelAnimationFrame(animId);
-  }, [repelRadius, repelForce]);
+    // 1. Setup Scene, Camera, and Renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-  // Pointer position update helper
-  const updatePointer = useCallback((clientX: number, clientY: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const mx = clientX - rect.left;
-    const my = clientY - rect.top;
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-    mouseRef.current = { x: mx, y: my, active: true };
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
 
-    const dragIdx = activeDragIndexRef.current;
-    if (dragIdx !== null) {
-      const p = physicsRef.current[dragIdx];
-      if (p && p.isDragging) {
-        const newX = mx - p.dragOffsetX;
-        const newY = my - p.dragOffsetY;
+    container.appendChild(renderer.domElement);
 
-        p.vx = (mx - p.lastMouseX) * 0.8;
-        p.vy = (my - p.lastMouseY) * 0.8;
+    // 2. Uniforms Setup
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: new THREE.Vector2(width * 0.5, height * 0.5) },
+      u_speed: { value: speed },
+      u_intensity: { value: intensity },
+      u_electricBlue: { value: hexToVec3(electricBlue) },
+      u_cyanHighlight: { value: hexToVec3(cyanHighlight) },
+      u_grain: { value: grainIntensity },
+    };
 
-        p.lastMouseX = mx;
-        p.lastMouseY = my;
-        p.x = newX;
-        p.y = newY;
+    // 3. GLSL Vertex Shader
+    const vertexShader = `
+      varying vec2 v_uv;
+      void main() {
+        v_uv = uv;
+        gl_Position = vec4(position, 1.0);
       }
-    }
-  }, []);
+    `;
 
-  // Mouse Handlers
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    updatePointer(e.clientX, e.clientY);
-  }, [updatePointer]);
+    // 4. GLSL Fragment Shader (Abyssal Fluid Plasma)
+    const fragmentShader = `
+      precision highp float;
 
-  const handleMouseLeave = useCallback(() => {
-    mouseRef.current.active = false;
-    if (activeDragIndexRef.current !== null) {
-      const p = physicsRef.current[activeDragIndexRef.current];
-      if (p) p.isDragging = false;
-      activeDragIndexRef.current = null;
-    }
-  }, []);
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
+      uniform float u_intensity;
+      uniform vec3 u_electricBlue;
+      uniform vec3 u_cyanHighlight;
+      uniform float u_grain;
 
-  // Touch Handlers for Mobile Support
-  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length > 0) {
-      const touch = e.touches[0];
-      updatePointer(touch.clientX, touch.clientY);
-    }
-  }, [updatePointer]);
+      varying vec2 v_uv;
 
-  const handlePointerStart = (index: number, clientX: number, clientY: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const mx = clientX - rect.left;
-    const my = clientY - rect.top;
-
-    const p = physicsRef.current[index];
-    if (!p) return;
-
-    p.isDragging = true;
-    p.dragOffsetX = mx - p.x;
-    p.dragOffsetY = my - p.y;
-    p.lastMouseX = mx;
-    p.lastMouseY = my;
-    p.vx = 0;
-    p.vy = 0;
-
-    activeDragIndexRef.current = index;
-  };
-
-  const handlePointerEnd = () => {
-    if (activeDragIndexRef.current !== null) {
-      const p = physicsRef.current[activeDragIndexRef.current];
-      if (p) {
-        p.isDragging = false;
+      // --- MATHEMATICAL NOISE & FBM HELPERS ---
+      float hash(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
       }
-      activeDragIndexRef.current = null;
-    }
-  };
+
+      float noise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        vec2 u = f * f * (3.0 - 2.0 * f); // Hermite curve smoothing
+        return mix(
+          mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+          mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+          u.y
+        );
+      }
+
+      // Fractional Brownian Motion (4 Octaves)
+      float fbm(vec2 p) {
+        float value = 0.0;
+        float amp = 0.5;
+        float freq = 1.0;
+        mat2 rot = mat2(0.80, 0.60, -0.60, 0.80);
+        for (int i = 0; i < 4; i++) {
+          value += amp * noise(p * freq);
+          p = rot * p * 2.02;
+          amp *= 0.5;
+        }
+        return value;
+      }
+
+      void main() {
+        // Normalize aspect-corrected UV coordinates
+        vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+        vec2 raw_uv = gl_FragCoord.xy / u_resolution.xy;
+        
+        // Mouse coordinate mapping
+        vec2 mouse = (u_mouse - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+        float mouseDist = length(uv - mouse);
+        float mouseInteraction = exp(-mouseDist * mouseDist * 8.0); // Radial push strength
+
+        float t = u_time * 0.25 * u_speed;
+
+        // Base Void Palette (#030008 background)
+        vec3 voidBg = vec3(0.011, 0.0, 0.031);
+        vec3 sapphireBase = vec3(0.02, 0.08, 0.25);
+
+        // --- 1. DOMAIN WARPING (Fluid Dynamics) ---
+        vec2 p = uv * 2.5;
+        
+        // Localized interactive force from cursor
+        p += (uv - mouse) * mouseInteraction * 0.4;
+
+        // First warp stage
+        vec2 q = vec2(
+          fbm(p + vec2(0.0, 0.0) + t * 0.4),
+          fbm(p + vec2(5.2, 1.3) - t * 0.3)
+        );
+
+        // Second double-nested warp stage (creates fluid swirl turbulence)
+        vec2 r = vec2(
+          fbm(p + 3.2 * q + vec2(1.7, 9.2) + t * 0.5),
+          fbm(p + 3.2 * q + vec2(8.3, 2.8) - t * 0.4)
+        );
+
+        float fluidVal = fbm(p + 2.8 * r);
+
+        // --- 2. PRISMATIC LIQUID GLASS FOLDS ---
+        // Exponentiated sine peaks simulate sharp reflective ridges on liquid glass
+        float foldPattern1 = pow(1.0 - abs(sin(r.x * 6.0 + r.y * 4.0 + t * 2.0)), 8.0);
+        float foldPattern2 = pow(abs(sin(q.x * 5.0 - r.y * 5.0 - t * 1.5)), 10.0);
+
+        vec3 liquidFolds = mix(u_electricBlue, u_cyanHighlight, r.x * 0.8 + 0.2) * foldPattern1 * 1.8;
+        liquidFolds += u_cyanHighlight * foldPattern2 * 1.4;
+
+        // Soft volumetric fluid body glow
+        vec3 fluidBody = mix(sapphireBase, u_electricBlue, smoothstep(-0.2, 0.8, fluidVal));
+
+        // --- 3. NEON PLASMA BORDER ---
+        float edgeX = min(raw_uv.x, 1.0 - raw_uv.x);
+        float edgeY = min(raw_uv.y, 1.0 - raw_uv.y);
+        float edgeDist = min(edgeX, edgeY);
+
+        // Exponential border glow decay
+        float borderGlow = exp(-edgeDist * 16.0);
+        float innerBorderGlow = exp(-edgeDist * 40.0);
+        
+        // Turbulent animation along the border frame
+        float borderTurbulence = fbm(raw_uv * 10.0 + t * 2.0);
+        float plasmaBorderMask = borderGlow * (0.8 + 0.4 * borderTurbulence);
+
+        vec3 borderPlasma = mix(u_electricBlue, u_cyanHighlight, borderTurbulence) * plasmaBorderMask * 2.5;
+        borderPlasma += vec3(0.9, 0.95, 1.0) * innerBorderGlow * 2.0; // Hot core plasma edge
+
+        // --- 4. COMPOSITION & COMBINATION ---
+        vec3 color = voidBg;
+        
+        // Blend fluid structure into void
+        color = mix(color, fluidBody, smoothstep(0.1, 0.9, fluidVal) * 0.8);
+        color += liquidFolds * smoothstep(0.2, 1.0, length(q));
+        color += borderPlasma;
+
+        // In-shader Exponential Masking Bloom on luminous ridges
+        color += pow(max(liquidFolds + borderPlasma, vec3(0.0)), vec3(2.0)) * 0.35;
+
+        // --- 5. IN-SHADER POST-PROCESSING ---
+        // Radial Vignette
+        float dist = length(uv);
+        float vignette = smoothstep(1.6, 0.2, dist);
+        color *= vignette;
+
+        // S-Curve Tone Mapping & Contrast
+        color = 1.0 - exp(-color * u_intensity);
+        color = pow(color, vec3(1.1)); // Subtle gamma adjustment
+
+        // Micro Film Grain
+        float grain = (hash(raw_uv * 100.0 + u_time) - 0.5) * u_grain;
+        color += grain;
+
+        gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+      }
+    `;
+
+    // 5. Material & Plane Mesh
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader,
+      fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    // 6. Event Handlers & Smooth Pointer Tracking
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = rect.height - (event.clientY - rect.top); // Invert Y for WebGL
+      mouseTargetRef.current.set(x, y);
+    };
+
+    container.addEventListener('mousemove', handleMouseMove);
+
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
+
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // 7. Render Loop
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+      uniforms.u_time.value = elapsedTime;
+
+      // Lerp mouse coordinates smoothly
+      mouseCurrentRef.current.lerp(mouseTargetRef.current, 0.05);
+      uniforms.u_mouse.value.copy(mouseCurrentRef.current);
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // 8. Cleanup & Resource Management
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      container.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+    };
+  }, [speed, intensity, electricBlue, cyanHighlight, grainIntensity]);
 
   return (
-    <div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onMouseUp={handlePointerEnd}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handlePointerEnd}
-      className={`relative w-full ${height} overflow-hidden rounded-3xl bg-slate-950 select-none font-sans ${className}`}
-      style={{ touchAction: 'none' }}
-    >
-      {/* Background Image & Dark Overlay */}
-      {bgImageUrl && (
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-          style={{ backgroundImage: `url(${bgImageUrl})` }}
-        />
-      )}
-      <div
-        className="absolute inset-0 bg-slate-950 transition-opacity duration-500"
-        style={{ opacity: bgOverlayOpacity }}
-      />
-
-      {/* Subtle Grid Ambient Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-
-      {/* Animated Center Content */}
-      {showCenterText && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 pointer-events-none">
-          <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="max-w-2xl flex flex-col items-center space-y-5"
-          >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-md text-xs font-mono text-cyan-400 uppercase tracking-widest shadow-lg shadow-cyan-500/10">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              Interactive Canvas
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight drop-shadow-2xl leading-none">
-              {title}
-            </h1>
-
-            <p className="text-base sm:text-lg text-slate-300 font-light leading-relaxed max-w-lg drop-shadow">
-              {subtitle}
-            </p>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Interactive Physics Cards */}
-      {cards.map((card, idx) => {
-        const cardW = card.width || 200;
-        const cardH = card.height || 140;
-
-        return (
-          <div
-            key={card.id}
-            ref={(el) => (cardRefs.current[idx] = el)}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              handlePointerStart(idx, e.clientX, e.clientY);
-            }}
-            onTouchStart={(e) => {
-              e.stopPropagation();
-              if (e.touches.length > 0) {
-                handlePointerStart(idx, e.touches[0].clientX, e.touches[0].clientY);
-              }
-            }}
-            style={{
-              width: `${cardW}px`,
-              height: `${cardH}px`,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              willChange: 'transform',
-            }}
-            className="z-20 cursor-grab active:cursor-grabbing transition-shadow duration-300 hover:z-30"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              className={`w-full h-full rounded-2xl overflow-hidden p-4 flex flex-col justify-between transition-all ${
-                glassEffect
-                  ? 'bg-slate-900/60 backdrop-blur-xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:border-cyan-400/50 hover:shadow-[0_20px_50px_rgba(0,240,255,0.2)]'
-                  : 'bg-slate-900 border border-slate-800 shadow-2xl'
-              } ${card.bgGradient ? `bg-gradient-to-br ${card.bgGradient}` : ''}`}
-            >
-              {card.type === 'image' && card.imageUrl ? (
-                <div className="relative w-full h-full rounded-xl overflow-hidden group">
-                  <img
-                    src={card.imageUrl}
-                    alt={card.title || 'Card Image'}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent p-3 flex flex-col justify-end">
-                    {card.title && (
-                      <h3 className="text-sm font-bold text-white leading-tight drop-shadow">
-                        {card.title}
-                      </h3>
-                    )}
-                    {card.subtitle && (
-                      <p className="text-xs text-slate-300 font-medium opacity-80">
-                        {card.subtitle}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    {card.badge && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono tracking-wider font-semibold uppercase bg-white/10 text-cyan-300 border border-white/10">
-                        {card.badge}
-                      </span>
-                    )}
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80 shadow-[0_0_8px_#00f0ff]" />
-                  </div>
-
-                  <div>
-                    {card.title && (
-                      <h3 className="text-base font-bold text-white tracking-tight leading-snug">
-                        {card.title}
-                      </h3>
-                    )}
-                    {card.subtitle && (
-                      <p className="text-xs text-slate-300/80 mt-1 line-clamp-2 leading-relaxed">
-                        {card.subtitle}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </div>
-        );
-      })}
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-[#030008] ${className}`}>
+      {/* WebGL Render Target */}
+      <div ref={mountRef} className="absolute inset-0 w-full h-full z-0" />
+      
+      {/* UI Overlay Slot */}
+      {children && <div className="relative z-10 w-full h-full">{children}</div>}
     </div>
   );
 }
 
-export default BouncingPhysicsCards;
+export default AbyssalFluidPlasma;
