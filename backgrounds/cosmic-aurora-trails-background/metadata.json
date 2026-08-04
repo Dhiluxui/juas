@@ -4,23 +4,35 @@
   "description": "A WebGL background component combining top-down prismatic aurora rays with diagonal fiber-optic cosmic light trails and glass grain folds.",
   "category": "Backgrounds",
   "tags": [
-    "threejs",
-    "shader",
-    "webgl",
-    "background",
-    "aurora",
-    "cosmic",
-    "trails"
+    "React",
+    "Three.js",
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
     "Three.js",
-    "Tailwind CSS"
+    "Tailwind CSS",
+    "TypeScript",
+    "WebGL",
+    "requestAnimationFrame",
+    "useEffect",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cosmic-aurora-trails-background/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/cosmic-aurora-trails-background/index.jsx",
-  "created_at": "2026-08-03T23:59:53.109Z"
+  "created_at": "2026-08-04T00:56:13.152Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cosmic-aurora-trails-background/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/cosmic-aurora-trails-background/video.webm"
 }
