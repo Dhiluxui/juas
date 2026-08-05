@@ -1,0 +1,28 @@
+{
+  "slug": "lens-ripple",
+  "name": "Lens Ripple",
+  "description": "A blue lens-ripple background inspired by a stacked interference loop: five vertically stacked point sources each emit sharpened ring waves that overlap, producing the stacked vesica/lens shapes and a perspective-style fade toward the bottom seen in the reference clip.",
+  "category": "Backgrounds",
+  "tags": [
+    "webgl",
+    "shader",
+    "motion",
+    "background",
+    "ripple",
+    "interference",
+    "blue",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "OGL",
+    "WebGL",
+    "TypeScript"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/lens-ripple/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/lens-ripple/index.jsx",
+  "created_at": "2026-08-05T06:26:56.732Z"
+}
