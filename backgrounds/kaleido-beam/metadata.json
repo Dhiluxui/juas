@@ -1,0 +1,28 @@
+{
+  "slug": "kaleido-beam",
+  "name": "Kaleido Beam",
+  "description": "A mirrored blue kaleidoscope beam background inspired by a symmetric ray-of-light loop: the UV field is folded across both axes so glowing beams converge into sharp bowtie points, layered with soft-to-bright halo widths and a gentle flame-like flicker on the ray angle.",
+  "category": "Backgrounds",
+  "tags": [
+    "webgl",
+    "shader",
+    "motion",
+    "background",
+    "kaleidoscope",
+    "beam",
+    "blue",
+    "interactive"
+  ],
+  "tech_stack": [
+    "React",
+    "OGL",
+    "WebGL",
+    "TypeScript"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/kaleido-beam/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/kaleido-beam/index.jsx",
+  "created_at": "2026-08-05T06:26:32.387Z"
+}
