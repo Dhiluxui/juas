@@ -241,29 +241,6 @@ export default function App() {
         <ShaderBackground />
       </div>
 
-      <div 
-        className="absolute inset-0 z-[1] pointer-events-none" 
-        style={{ 
-          background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.4) 100%)' 
-        }} 
-      />
-
-      <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center mix-blend-lighten text-center px-4">
-        <div className="pointer-events-auto flex flex-col items-center">
-            <h2 className="text-white tracking-[0.5em] md:tracking-[0.8em] text-xs md:text-sm mb-4 uppercase opacity-80 font-medium translate-y-4">
-            Hurtling Through Infinity
-            </h2>
-            
-            <h1 
-                className="text-white text-8xl md:text-[14rem] font-bold tracking-tighter opacity-90 leading-none"
-                style={{ 
-                    textShadow: '0 0 80px rgba(255, 255, 255, 0.2), 0 0 20px rgba(0, 180, 255, 0.5)'
-                }}
-            >
-            Bloom
-            </h1>
-        </div>
-      </div>
     </div>
   );
 }
