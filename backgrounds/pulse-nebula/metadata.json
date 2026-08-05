@@ -1,0 +1,25 @@
+{
+  "slug": "pulse-nebula",
+  "name": "Pulse Nebula",
+  "description": "A radial nebula WebGL background with concentric distance-field pulse rings expanding from a mouse-reactive core over a drifting noise cloud. Parameter-driven: speed, base/accent colors, pulse count, and glow intensity are exposed as props. Pure background component — no hardcoded hero content.",
+  "category": "Backgrounds",
+  "tags": [
+    "background",
+    "webgl",
+    "shader",
+    "nebula",
+    "rings",
+    "mouse-reactive"
+  ],
+  "tech_stack": [
+    "React",
+    "WebGL",
+    "GLSL"
+  ],
+  "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
+  "creator_username": "eb5cc7a2",
+  "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/pulse-nebula/index.jsx",
+  "cdn_css_url": null,
+  "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/pulse-nebula/index.jsx",
+  "created_at": "2026-08-05T07:38:01.775Z"
+}
