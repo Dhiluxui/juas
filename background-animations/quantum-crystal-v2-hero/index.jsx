@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+// --- WebGL Utility Functions ---
+function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,101 +14,226 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
+// --- Fragment Shader (The Magic) ---
+// This combines the "Bloom" colorful twisting ribbons with the "Hurtling" 3D infinite tunnel effect.
+const fragmentShaderSource = `
+  precision highp float;
+  uniform vec2 uResolution;
+  uniform float uTime;
+  uniform vec2 uMouse;
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+  // 2D Rotation Matrix
+  mat2 rot(float a) {
+      float s = sin(a), c = cos(a);
+      return mat2(c, -s, s, c);
+  }
 
-  React.useEffect(() => {
+  // Pseudo-random hash
+  float hash(vec2 p) {
+      p = fract(p * vec2(234.34, 435.345));
+      p += dot(p, p + 34.23);
+      return fract(p.x * p.y);
+  }
+
+  // Value Noise
+  float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  void main() {
+      // Normalize coordinates
+      vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
+
+      // Subtle Parallax based on Mouse
+      vec2 m = uMouse / uResolution - 0.5;
+      if (length(uMouse) == 0.0) m = vec2(0.0);
+      uv += m * 0.15;
+
+      float r = length(uv);
+      float a = atan(uv.y, uv.x);
+
+      // Core timing
+      float t = uTime * 2.5; // Speed of hurtling
+
+      // Pseudo-3D Tunnel Mapping: 
+      // depth approaches infinity as r approaches 0
+      float depth = 1.0 / max(r, 0.01);
+      float z = depth - t; // Move forward through the tunnel
+
+      // Swirl the tunnel based on depth to create the twisting "Bloom" aesthetic
+      float twist = sin(depth * 0.05 - t * 0.1) * 0.5;
+      a += twist;
+
+      vec3 col = vec3(0.0);
+
+      // --- Volumetric Beams/Ribbons ---
+      float numBeams = 50.0;
+      float beamId = floor(a * numBeams / 6.28318);
+      
+      // Organic noise on the edges so they look like fluid ribbons instead of rigid blocks
+      float edgeNoise = noise(vec2(z * 0.4, beamId)) * 0.4 - 0.2;
+      float beamLocal = fract(a * numBeams / 6.28318 + edgeNoise);
+
+      // Random seed for the current beam
+      float h = hash(vec2(beamId, 1.0));
+
+      // Break beams along Z-axis into discrete zooming streaks
+      float zScale = 0.4 + h * 2.0; 
+      float zId = floor(z * zScale);
+      float zFract = fract(z * zScale);
+
+      // Decide if a streak exists in this segment
+      float beamActive = hash(vec2(beamId, zId));
+
+      if (beamActive > 0.25) {
+          // Vibrant Bloom Color Palette
+          vec3 c1 = vec3(1.0, 0.05, 0.4); // Neon Magenta
+          vec3 c2 = vec3(0.0, 0.8, 1.0);  // Cyan
+          vec3 c3 = vec3(1.0, 0.6, 0.0);  // Bright Orange
+          vec3 c4 = vec3(0.5, 0.0, 1.0);  // Deep Purple
+
+          // Interpolate colors based on angular position and time
+          vec3 beamCol = mix(c1, c2, sin(beamId * 0.15 + t) * 0.5 + 0.5);
+          beamCol = mix(beamCol, c3, cos(beamId * 0.4 - t * 0.6) * 0.5 + 0.5);
+          if (h > 0.8) beamCol = c4;
+          if (h < 0.15) beamCol = vec3(1.0, 0.9, 0.2); // Searing Yellow
+
+          // Add a ribbed texture across the beam surface (from Bloom ref)
+          float ribbed = sin(z * 30.0 + beamId * 15.0) * 0.5 + 0.5;
+
+          // Build streak intensity
+          float intensity = 1.0;
+          
+          // Edge taper (makes them look like solid, glass-like ribbons)
+          float profile = smoothstep(0.0, 0.15, beamLocal) * smoothstep(1.0, 0.85, beamLocal);
+          intensity *= profile;
+
+          // Z-axis taper (fades the ends of the streak)
+          intensity *= smoothstep(0.0, 0.15, zFract) * smoothstep(1.0, 0.7, zFract);
+          intensity *= mix(0.7, 1.0, ribbed);
+
+          // Intense white/chromatic edge glints
+          float edgeHighlight = smoothstep(0.8, 1.0, abs(beamLocal - 0.5) * 2.0);
+          vec3 highlightCol = vec3(1.0) * edgeHighlight;
+
+          // Output color
+          col += beamCol * intensity * (0.6 + h);
+          col += highlightCol * intensity * 0.8;
+
+          // Energy pulse traveling along the beam
+          float pulse = smoothstep(0.9, 1.0, sin(z * 4.0 + t * 8.0 + beamId));
+          col += beamCol * pulse * 2.0 * intensity;
+      }
+
+      // --- Ambient Volumetric Glow ---
+      float glowNoise = noise(vec2(a * 3.0, z * 1.5 - t));
+      vec3 glowCol = mix(vec3(0.8, 0.0, 1.0), vec3(0.0, 0.6, 1.0), sin(a * 2.0)*0.5+0.5);
+      col += glowCol * glowNoise * 0.15 / (r + 0.2);
+
+      // --- Central Eclipse / Void ---
+      float coreR = 0.18; // Size of the black hole
+      float coreMask = smoothstep(coreR, coreR + 0.02, r);
+      col *= coreMask;
+
+      // Bright glowing corona ring around the void
+      float ring = smoothstep(coreR - 0.02, coreR, r) - smoothstep(coreR, coreR + 0.05, r);
+      vec3 corona = vec3(1.0, 0.8, 0.9) * ring;
+      corona += vec3(0.2, 0.7, 1.0) * smoothstep(coreR, coreR + 0.1, r) * (1.0 - smoothstep(coreR + 0.05, coreR + 0.3, r));
+      col += corona * 1.5;
+
+      // Fade to black at screen edges for depth effect
+      col *= exp(-r * 1.2);
+
+      // --- Post-Processing ---
+      // Cinematic film grain
+      float grain = hash(uv * 200.0 + t);
+      col += (grain - 0.5) * 0.08;
+
+      // Tonemapping & Contrast
+      col = pow(col, vec3(0.85)); // Gamma correction
+      col = smoothstep(0.0, 1.1, col);
+
+      gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+const vertexShaderSource = `
+  attribute vec2 position;
+  void main() { gl_Position = vec4(position, 0.0, 1.0); }
+`;
+
+// --- Shader Canvas Component ---
+function ShaderBackground({ className = '' }) {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: false });
+    if (!gl) {
+        console.warn('WebGL not supported');
+        return;
+    }
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     if (!vertexShader || !fragmentShader) return;
 
     const program = gl.createProgram();
-    if (!program) return;
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
     gl.useProgram(program);
 
+    // Setup geometry (full screen quad)
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
     
     const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+    // Uniform locations
+    const uTimeLocation = gl.getUniformLocation(program, 'uTime');
+    const uResolutionLocation = gl.getUniformLocation(program, 'uResolution');
+    const uMouseLocation = gl.getUniformLocation(program, 'uMouse');
     
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
+    // Mouse interaction tracking
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mouseRef.current.x = (e.clientX - rect.left) * dpr;
       mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        mouseRef.current.x = (e.touches[0].clientX - rect.left) * dpr;
+        mouseRef.current.y = canvas.height - (e.touches[0].clientY - rect.top) * dpr;
+      }
+    };
 
-    let initialSet = false;
-    let animationFrameId: number;
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+
+    let animationFrameId;
     let startTime = performance.now();
+    let initialSet = false;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -120,7 +246,7 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
@@ -134,28 +260,9 @@ function ShaderBackground({
 
       const t = (time - startTime) * 0.001;
       
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
+      gl.uniform1f(uTimeLocation, t);
+      gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
+      gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(render);
@@ -165,14 +272,11 @@ function ShaderBackground({
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
       cancelAnimationFrame(animationFrameId);
       gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, []);
 
   return (
     <canvas
@@ -183,146 +287,24 @@ function ShaderBackground({
   );
 }
 
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
+// --- Main Exported Component ---
+export default function App() {
+  return (
+    <div className="relative w-full h-screen bg-[#010002] overflow-hidden font-sans selection:bg-fuchsia-500 selection:text-white">
+      {/* 3D WebGL Background Layer */}
+      <div className="absolute inset-0 z-0">
+        <ShaderBackground />
+      </div>
 
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-    float sdBox(vec3 p, vec3 b) { vec3 q = abs(p) - b; return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0); }
-    
-    // 3D Hash
-    float hash(vec3 p) { 
-        p = fract(p * vec3(443.897, 441.423, 437.195)); 
-        p += dot(p, p.yzx + 19.19); 
-        return fract(p.x * p.y * p.z); 
-    }
+      {/* Subtle vignette/gradient overlay to anchor the text */}
+      <div 
+        className="absolute inset-0 z-[1] pointer-events-none" 
+        style={{ 
+          background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.4) 100%)' 
+        }} 
+      />
 
-    // Map the shattered, frozen explosion of crystal shards
-    float map(vec3 p) {
-        float d = 100.0;
-        float t = uTime * 0.5;
-        
-        // Render 15 large jagged shards frozen in space
-        for(int i = 0; i < 15; i++) {
-            vec3 q = p;
-            float fi = float(i);
-            
-            // Random positional offset for each shard, bursting outward from center
-            vec3 offset = vec3(
-                hash(vec3(fi, 1.0, 2.0)), 
-                hash(vec3(fi, 3.0, 4.0)), 
-                hash(vec3(fi, 5.0, 6.0))
-            ) * 6.0 - 3.0;
-            
-            // Shards slowly drift away from the core
-            q -= offset * (1.0 + sin(t) * 0.2);
-            
-            // Complex random rotation per shard
-            q.xy *= rot(t * hash(vec3(fi, 1.1, 2.1)) * 2.0);
-            q.xz *= rot(t * hash(vec3(fi, 2.1, 3.1)) * 2.0);
-            
-            // Long, jagged crystal shard shapes
-            float shard = sdBox(q, vec3(0.2, 0.8, 0.2));
-            
-            d = min(d, shard);
-        }
-        
-        // Central energy singularity
-        float core = length(p) - 0.5 - sin(t * 10.0) * 0.1;
-        d = min(d, core);
-        
-        return d;
-    }
 
-    vec3 getNormal(vec3 p) {
-        vec2 e = vec2(0.001, 0.0);
-        return normalize(vec3(
-            map(p+e.xyy)-map(p-e.xyy), 
-            map(p+e.yxy)-map(p-e.yxy), 
-            map(p+e.yyx)-map(p-e.yyx)
-        ));
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Camera positioned back to see the entire explosion
-        vec3 ro = vec3(0.0, 0.0, -8.0);
-        vec3 rd = normalize(vec3(uv, 1.0));
-        
-        vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
-        }
-        
-        // Entire scene slowly rotates
-        ro.xz *= rot(uTime * 0.2); rd.xz *= rot(uTime * 0.2);
-        
-        float dTotal = 0.0;
-        vec3 p;
-        float glow = 0.0;
-        
-        // Raymarch
-        for(int i = 0; i < 90; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            
-            // Intense core energy accumulation
-            float core = length(p) - 0.5;
-            glow += 0.005 / (0.01 + abs(core));
-            
-            if(d < 0.001 || dTotal > 15.0) break;
-            dTotal += d * 0.8;
-        }
-        
-        vec3 col = vec3(0.01, 0.0, 0.02); // Pitch black void
-        
-        if (dTotal < 15.0) {
-            vec3 n = getNormal(p);
-            vec3 l = normalize(vec3(1.0, 2.0, -2.0));
-            float diff = max(dot(n, l), 0.0);
-            
-            // Obsidian / Amethyst Material
-            col = vec3(0.1, 0.05, 0.15) * diff;
-            
-            // Blinding specular reflections on the shattered edges
-            vec3 ref = reflect(rd, n);
-            float spec = pow(max(dot(ref, l), 0.0), 32.0);
-            col += vec3(1.0, 0.5, 1.0) * spec * 1.5;
-            
-            // Deep magenta edge highlights
-            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-            col += vec3(1.0, 0.0, 0.8) * fresnel * 1.2;
-        }
-        
-        // Add the blinding singularity core
-        col += vec3(1.0, 0.2, 0.8) * glow * 0.8; // Magenta corona
-        col += vec3(0.2, 0.5, 1.0) * pow(glow * 0.4, 2.0); // Cyan white-hot center
-        
-        col = pow(col, vec3(0.85)); // Gamma mapping
-        col *= 1.0 - dot(uv, uv) * 0.3; // Light vignette
-        
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }
-  `
-};
-
-export const QuantumCrystalV2Hero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#010002] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(1, 0, 2, 0.95) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+  );
+}
