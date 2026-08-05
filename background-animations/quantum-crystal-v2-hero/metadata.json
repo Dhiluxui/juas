@@ -1,7 +1,7 @@
 {
   "slug": "quantum-crystal-v2-hero",
-  "name": "Quantum Crystal V2",
-  "description": "Updated self-runnable animation.",
+  "name": "HurtlingBloom",
+  "description": "tunnel effect composed of vibrant, twisting ribbons of neon light (cyan, magenta, yellow, and purple) radiating outward from a central eclipse void—capturing the exact essence of the \"Bloom\" and \"Hurtling\" aesthetic.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -14,7 +14,14 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Blur & Filter",
+    "3D Transform",
+    "Noise / Randomness",
+    "Responsive",
+    "Touch Events",
+    "Glassmorphism",
+    "Morphing"
   ],
   "tech_stack": [
     "React",
@@ -27,13 +34,21 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Blur & Filter",
+    "3D Transform",
+    "Noise / Randomness",
+    "Responsive",
+    "Touch Events",
+    "Glassmorphism",
+    "Morphing"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-crystal-v2-hero/index.jsx",
-  "created_at": "2026-07-30T09:26:41.900Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/thumbnail.png"
+  "created_at": "2026-08-05T07:25:10.547Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-crystal-v2-hero/video.webm"
 }
