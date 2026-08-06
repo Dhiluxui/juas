@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+/* STREAMING_CHUNK:Initializing core WebGL helpers... */
+
+// ============================================================================
+// Core WebGL Renderer
+// ============================================================================
+
+export function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,33 +19,20 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
+export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '', speed = 1.0 }) {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const targetMouseRef = useRef({ x: 0, y: 0 });
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
-
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -51,10 +44,14 @@ function ShaderBackground({
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
+    }
     
     gl.useProgram(program);
 
+    /* STREAMING_CHUNK:Setting up geometry and buffers... */
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
     const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
 
@@ -80,35 +77,37 @@ function ShaderBackground({
       gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     }
 
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
+    const timeLocation = gl.getUniformLocation(program, 'uTime');
+    const resolutionLocation = gl.getUniformLocation(program, 'uResolution');
+    const mouseLocation = gl.getUniformLocation(program, 'uMouse');
+    const speedLocation = gl.getUniformLocation(program, 'uSpeed');
 
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
+    /* STREAMING_CHUNK:Configuring mouse interactions... */
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+      targetMouseRef.current.x = (e.clientX - rect.left) * dpr;
+      targetMouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        targetMouseRef.current.x = (e.touches[0].clientX - rect.left) * dpr;
+        targetMouseRef.current.y = canvas.height - (e.touches[0].clientY - rect.top) * dpr;
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchstart', handleTouchMove, { passive: true });
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
+    /* STREAMING_CHUNK:Defining the render loop... */
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const width = canvas.clientWidth * dpr;
@@ -120,14 +119,20 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
         mouseRef.current.x = canvas.width / 2;
         mouseRef.current.y = canvas.height / 2;
+        targetMouseRef.current.x = canvas.width / 2;
+        targetMouseRef.current.y = canvas.height / 2;
         initialSet = true;
       }
+
+      // Silky smooth mouse interpolation
+      mouseRef.current.x += (targetMouseRef.current.x - mouseRef.current.x) * 0.05;
+      mouseRef.current.y += (targetMouseRef.current.y - mouseRef.current.y) * 0.05;
 
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -137,25 +142,7 @@ function ShaderBackground({
       if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
+      if (speedLocation !== null) gl.uniform1f(speedLocation, speed);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(render);
@@ -165,6 +152,8 @@ function ShaderBackground({
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchMove);
       cancelAnimationFrame(animationFrameId);
       gl.deleteProgram(program);
       gl.deleteShader(vertexShader);
@@ -172,7 +161,7 @@ function ShaderBackground({
       gl.deleteBuffer(positionBuffer);
       gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [vertexShaderSource, fragmentShaderSource, speed]);
 
   return (
     <canvas
@@ -183,78 +172,158 @@ function ShaderBackground({
   );
 }
 
+/* STREAMING_CHUNK:Writing the custom fragment shader... */
+// ============================================================================
+// Shader Data: Iridescent Contour / Fluted Glass Topography
+// ============================================================================
+
 const shaderData = {
   vertex: `
     attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
+    void main() { 
+      gl_Position = vec4(position, 0.0, 1.0); 
+    }
   `,
   fragment: `
     precision highp float;
-    uniform float iTime;
-    uniform vec2 iResolution;
-    uniform vec2 iMouse;
+    uniform vec2 uResolution;
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform float uSpeed;
 
-    // Rotation matrix
+    // 2D Rotation Matrix for domain tilting
     mat2 rot(float a) {
         float s = sin(a), c = cos(a);
         return mat2(c, -s, s, c);
     }
 
-    // Liquid distortion function
-    float map(vec2 p) {
-        float t = iTime * 0.2;
-        p *= rot(t * 0.2);
-        
-        // Layered harmonic sine waves
-        float d = sin(p.x * 2.0 + t) + sin(p.y * 2.0 + t);
-        d += sin(p.x * 4.0 - t) * 0.5;
-        d += sin(p.y * 5.0 + t * 0.5) * 0.3;
-        return d;
+    // Heavy Domain Warping for the fluid shape
+    vec2 fluidWarp(vec2 p, float t, float offset) {
+        vec2 q = p;
+        for(float i = 1.0; i <= 5.0; i++) {
+            float fi = i;
+            // The sine/cosine loops create the complex folding and sweeping structure
+            q.x += (0.4 / fi) * sin(fi * 2.0 * q.y + t + offset);
+            q.y += (0.4 / fi) * cos(fi * 2.0 * q.x - t + offset);
+        }
+        return q;
     }
 
     void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution.xy) / min(iResolution.y, iResolution.x);
+        // Normalize coordinates, adjusting for aspect ratio
+        vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
         
-        // Mouse-reactive influence
-        vec2 mouse = (iMouse / iResolution.xy) * 2.0 - 1.0;
-        uv += mouse * 0.1;
+        // Mouse parallax integration
+        vec2 mouse = (uMouse * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
+        if(length(uMouse) < 0.1) mouse = vec2(0.0);
+        uv += mouse * 0.08;
 
-        // Color channels with chromatic separation
-        float r = map(uv * 1.5 + vec2(0.01));
-        float g = map(uv * 1.5 + vec2(0.00));
-        float b = map(uv * 1.5 - vec2(0.01));
+        // Base domain rotation - tilting the whole fluid field
+        vec2 p = uv * rot(0.4);
 
-        // Combine to create the 'caustic' look
-        vec3 col = vec3(r, g, b);
+        float t = uTime * uSpeed * 0.2;
         
-        // Adjust contrast for a 'light refraction' feel
-        col = smoothstep(-0.5, 1.5, col);
+        // --- CHROMATIC ABERRATION SETUP ---
+        // Calculate the fluid distortion 3 times with a spatial offset.
+        // This splits the high-frequency ridges into distinct RGB channels.
+        float caOffset = 0.035; 
         
-        // Palette mapping: Midnight Blue to Electric Teal
-        vec3 base = vec3(0.02, 0.05, 0.15); // Deep space
-        vec3 tint = vec3(0.1, 0.6, 0.8);    // Luminous aqua
-        vec3 highlight = vec3(0.8, 0.9, 1.0); // Bright white-blue
+        vec2 qR = fluidWarp(p, t, 0.0);
+        vec2 qG = fluidWarp(p, t, caOffset);
+        vec2 qB = fluidWarp(p, t, caOffset * 2.0);
+
+        // --- HIGH-FREQUENCY CONTOUR LINES ---
+        // We push the warped coordinates through a high-frequency sine function.
+        // predominantly based on the Y-axis to create predominantly horizontal sweeping lines.
+        float lineFreq = 75.0;
         
-        col = mix(base, tint, col);
-        col = mix(col, highlight, r * 0.5);
+        // Use 1.0 - abs(sin) to create incredibly sharp peaks
+        float rWave = 1.0 - abs(sin(qR.y * lineFreq + qR.x * 20.0));
+        float gWave = 1.0 - abs(sin(qG.y * lineFreq + qG.x * 20.0));
+        float bWave = 1.0 - abs(sin(qB.y * lineFreq + qB.x * 20.0));
+        
+        // Exponentiate the waves to make them razor-thin, glowing specular ridges
+        float sharpness = 5.0;
+        float rSharp = pow(rWave, sharpness);
+        float gSharp = pow(gWave, sharpness);
+        float bSharp = pow(bWave, sharpness);
 
-        // Add vignetting for focus
-        float dist = length(uv);
-        col *= 1.0 - smoothstep(0.1, 1.2, dist);
+        // --- MACRO COLOR MASKS ---
+        // We use the macro structure of the warp to define where certain colors appear
+        // so it isn't a uniform rainbow, creating structured ribbons of color.
+        float maskR = smoothstep(-0.5, 1.0, sin(qR.x * 2.5 + t));
+        float maskG = smoothstep(-0.5, 1.0, cos(qG.y * 2.5 - t));
+        float maskB = smoothstep(-0.5, 1.0, sin(qB.x * 2.0 + qB.y * 2.5 + t));
 
-        gl_FragColor = vec4(col, 1.0);
+        // --- THE COLOR PALETTE ---
+        // Exactly matching the reference: Neon Magenta, Vibrant Gold, Electric Cyan
+        vec3 colMagenta = vec3(1.0, 0.0, 0.8) * 1.5;
+        vec3 colGold    = vec3(1.0, 0.8, 0.1) * 1.8;
+        vec3 colCyan    = vec3(0.0, 0.8, 1.0) * 1.5;
+        vec3 colPurple  = vec3(0.4, 0.0, 1.0) * 1.2;
+
+        vec3 color = vec3(0.0);
+        
+        // Apply the sharp ridges mixed with their respective color masks
+        color += colMagenta * rSharp * maskR;
+        color += colGold * gSharp * maskG;
+        color += colCyan * bSharp * maskB;
+        
+        // Where Red and Blue mix intensely, force a deep neon purple glow
+        color += colPurple * (rSharp * bSharp * 0.8);
+
+        // --- PURE WHITE CORES ---
+        // Where the ridges align perfectly across all channels, it means the fluid 
+        // hasn't split the spectrum there. We blow this out to pure white specular.
+        float core = pow(rWave * gWave * bWave, 2.0) * 2.5;
+        color += vec3(1.0) * core;
+
+        // --- GLOBAL STRUCTURAL MASK ---
+        // Create the dark empty void on the right/bottom side of the screen 
+        // to mimic the striking composition of the reference image.
+        float globalMask = smoothstep(1.8, -0.4, qG.x * 0.8 - qG.y * 0.5);
+        color *= globalMask;
+
+        // Deep void background for the empty areas
+        vec3 bg = vec3(0.005, 0.001, 0.015);
+        color += bg * (1.0 - globalMask);
+
+        // --- POST PROCESSING ---
+        // Soft vignette to frame the piece
+        float vignette = length(uv);
+        color *= 1.0 - smoothstep(1.2, 2.8, vignette);
+        
+        // Tone Mapping & Contrast
+        // S-Curve to enrich the darks and make the neon lights pop
+        color = color * color * (3.0 - 2.0 * color); 
+        color = pow(color, vec3(1.15)); 
+
+        gl_FragColor = vec4(color, 1.0);
     }
   `
 };
 
-export const LiquidCausticsHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#000] overflow-hidden font-sans ${className}`}>
+/* STREAMING_CHUNK:Building the hero component... */
+export const IridescentContourHero = ({ className = '', children }) => (
+  <div className={`relative w-full h-full bg-[#030105] overflow-hidden font-sans ${className}`}>
+    {/* Base WebGL Layer */}
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
+      <ShaderBackground 
+        vertexShaderSource={shaderData.vertex} 
+        fragmentShaderSource={shaderData.fragment} 
+        speed={1.0}
+      />
     </div>
   </div>
 );
+
+// ============================================================================
+// Main App Component
+// ============================================================================
+export default function App() {
+  return (
+    <div className="w-screen h-screen">
+      <IridescentContourHero />
+    </div>
+  );
+}
