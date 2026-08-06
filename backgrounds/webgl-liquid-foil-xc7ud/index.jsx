@@ -1,64 +1,97 @@
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-export default function App() {
-  const mountRef = useRef(null);
+export interface EtherealFluidProps {
+  /** @title Animation Speed */
+  speed?: number;
+  /** @title Base Void Color */
+  colorVoid?: string;
+  /** @title Primary Neon Color */
+  colorPrimary?: string;
+  /** @title Secondary Neon Color */
+  colorSecondary?: string;
+  /** @title Mouse Interaction Strength */
+  mouseStrength?: number;
+  /** @title Children (Overlay) */
+  children?: React.ReactNode;
+  /** @title Extra Classes */
+  className?: string;
+}
 
-  const customStyles = `
-    @keyframes slideUpFade {
-      0% { transform: translateY(60px) scale(0.95); opacity: 0; }
-      100% { transform: translateY(0) scale(1); opacity: 1; }
-    }
-    .animate-reveal {
-      animation: slideUpFade 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      animation-delay: 0.2s;
-    }
-    .holo-glass {
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(30px) saturate(150%);
-      -webkit-backdrop-filter: blur(30px) saturate(150%);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.15),
-                  inset 0 2px 2px rgba(255, 255, 255, 0.8),
-                  inset 0 -1px 4px rgba(255, 255, 255, 0.3);
-    }
-  `;
+export default function App({
+  speed = 0.5,
+  colorVoid = '#030008',
+  colorPrimary = '#0D99FF',
+  colorSecondary = '#FF007F',
+  mouseStrength = 0.8,
+  children,
+  className = '',
+}: EtherealFluidProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const targetMouseRef = useRef(new THREE.Vector2(0.5, 0.5));
 
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // 1. Scene & Camera Setup
+    // 1. Setup Scene, Camera, Renderer
     const scene = new THREE.Scene();
     
-    // Orthographic camera for 2D flat shaders
+    // Orthographic camera is perfect for 2D flat shaders
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
-    // Optimize performance while keeping it sharp on Retina displays
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    const width = mountRef.current.clientWidth || window.innerWidth;
+    const height = mountRef.current.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
     
     mountRef.current.appendChild(renderer.domElement);
 
+    // Helper to convert hex to normalized RGB for GLSL
+    const hexToRgbVec3 = (hex: string) => {
+      const color = new THREE.Color(hex);
+      return new THREE.Vector3(color.r, color.g, color.b);
+    };
+
+    // 2. Uniforms & Shader Material
     const uniforms = {
       u_time: { value: 0.0 },
-      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      u_speed: { value: speed },
+      u_colorVoid: { value: hexToRgbVec3(colorVoid) },
+      u_color1: { value: hexToRgbVec3(colorPrimary) },
+      u_color2: { value: hexToRgbVec3(colorSecondary) },
     };
 
     const vertexShader = `
+      varying vec2 vUv;
       void main() {
+        vUv = uv;
         gl_Position = vec4(position, 1.0);
       }
     `;
 
     const fragmentShader = `
+      precision highp float;
+      
       uniform float u_time;
       uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
+      
+      uniform vec3 u_colorVoid;
+      uniform vec3 u_color1;
+      uniform vec3 u_color2;
 
-      // Inigo Quilez's Cosine Color Palette
-      // Generates beautiful, continuous shifting colors based on a scalar value
-      vec3 palette( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d ) {
-          return a + b * cos( 6.28318 * (c * t + d) );
+      varying vec2 vUv;
+
+      // 2D Rotation matrix
+      mat2 rot(float a) {
+          float s = sin(a), c = cos(a);
+          return mat2(c, -s, s, c);
       }
 
       void main() {
@@ -69,53 +102,63 @@ export default function App() {
         // Correct aspect ratio to prevent stretching
         uv.x *= u_resolution.x / u_resolution.y;
 
-        float t = u_time * 0.2; // Slow, viscous movement
+        float t = u_time * u_speed;
 
-        vec2 p = uv * 1.5; // Scale the coordinate space
+        // Apply mouse interaction offset
+        vec2 mouseOffset = (u_mouse - 0.5) * 2.0;
+        vec2 p = uv - mouseOffset * 0.3;
+        
+        // Initial diagonal rotation for dynamic flow
+        p *= rot(-0.4);
 
-        // Domain Warping Loop
-        // Repeatedly offset the space based on sine/cosine of the space itself
-        for(int i = 1; i <= 7; i++) {
-            float fi = float(i);
-            // Complex space folding using time and spatial interference
-            float offset = t * 0.5;
-            p.x += 0.25 / fi * sin(fi * p.y + offset + cos(t * 0.3));
-            p.y += 0.25 / fi * cos(fi * p.x + offset + sin(t * 0.4));
+        // --- DOMAIN WARPING (Fluid Simulation) ---
+        // Iterate through sine/cosine layers to fold space
+        for(float i = 1.0; i <= 5.0; i++) {
+            float fi = i * 1.2;
+            p.x += 0.35 / fi * sin(fi * p.y * 2.0 + t + i);
+            p.y += 0.35 / fi * cos(fi * p.x * 2.0 - t * 0.8 + i);
         }
 
-        // Color Generation:
-        // Use the extensively warped coordinates to pick from a pastel color palette
-        // Palette parameters for Iridescent Pastels (Cyan, Magenta, Yellow, Pink)
-        vec3 a = vec3(0.8, 0.8, 0.8); // Base brightness (high for pastels)
-        vec3 b = vec3(0.4, 0.4, 0.4); // Contrast
-        vec3 c = vec3(1.0, 1.0, 1.0); // Frequency
-        vec3 d = vec3(0.00, 0.33, 0.67); // Phase shifts (RGB spread)
-
-        // The input to the palette is the length of the heavily warped vector
-        float warpedValue = length(p) * 0.5 + t * 0.2;
-        vec3 color = palette(warpedValue, a, b, c, d);
-
-        // Metallic Sheen / Highlights:
-        // Create sharp, glassy highlights based on the derivatives/ridges of the warp
-        float sheen = abs(sin(p.x * 3.0 + p.y * 3.0 + t));
-        sheen = pow(sheen, 8.0); // Sharpen into thin, bright lines
+        // --- COLOR & SHADING ---
+        // Generate a fluid structural map
+        float structure = sin(p.x * 2.5 + p.y * 2.5 + t);
         
-        // Add the white/silver sheen on top of the pastel colors
-        color += vec3(sheen * 0.4);
+        // Base gradient mix depending on spatial warping
+        float colorMix = smoothstep(-1.0, 1.0, p.x + p.y);
+        vec3 baseGradient = mix(u_color1, u_color2, colorMix);
 
-        // Soft vignetting to frame the piece
+        // AFTER EFFECTS SIM: Specular Glass Highlights (Ridges)
+        // High exponent creates sharp, thin, glossy light reflections
+        float ridge = pow(1.0 - abs(structure), 12.0);
+        
+        // Volume / Body of the fluid (soft ambient light)
+        float body = smoothstep(-0.2, 1.0, structure);
+
+        // Combine void background, soft fluid body, and intense sharp ridges
+        vec3 finalColor = u_colorVoid;
+        finalColor += baseGradient * body * 0.4;
+        finalColor += mix(baseGradient, vec3(1.0), 0.5) * ridge * 2.5;
+
+        // --- POST-PROCESSING ---
+        // Radial Vignette
         float dist = length(uv);
-        color -= smoothstep(1.5, 3.5, dist) * 0.3;
+        finalColor *= smoothstep(2.5, 0.4, dist);
 
-        // Output final luminous color
-        gl_FragColor = vec4(color, 1.0);
+        // S-Curve Contrast (Color Grading)
+        finalColor = finalColor * finalColor * (3.0 - 2.0 * finalColor);
+
+        // Add subtle film grain for premium texture
+        float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        finalColor += (grain - 0.5) * 0.04;
+
+        gl_FragColor = vec4(finalColor, 1.0);
       }
     `;
 
     const material = new THREE.ShaderMaterial({
       uniforms: uniforms,
       vertexShader: vertexShader,
-      fragmentShader: fragmentShader
+      fragmentShader: fragmentShader,
     });
 
     // 2x2 Plane to cover the entire orthographic camera view
@@ -124,28 +167,54 @@ export default function App() {
     scene.add(mesh);
 
     const clock = new THREE.Clock();
-    let animationFrameId;
+    let animationFrameId: number;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      
+      // Smoothly interpolate mouse position (lerp)
+      mouseRef.current.x += (targetMouseRef.current.x - mouseRef.current.x) * 0.05;
+      mouseRef.current.y += (targetMouseRef.current.y - mouseRef.current.y) * 0.05;
+      
       uniforms.u_time.value = clock.getElapsedTime();
+      uniforms.u_mouse.value.copy(mouseRef.current);
+      
       renderer.render(scene, camera);
     };
 
     animate();
 
     const handleResize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
+      if (!mountRef.current) return;
+      const w = mountRef.current.clientWidth;
+      const h = mountRef.current.clientHeight;
       
-      renderer.setSize(width, height);
-      uniforms.u_resolution.value.set(width, height);
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mountRef.current) return;
+      const rect = mountRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - ((e.clientY - rect.top) / rect.height);
+      targetMouseRef.current.set(x, y);
+    };
+
+    const handleMouseLeave = () => {
+      targetMouseRef.current.set(0.5, 0.5);
     };
 
     window.addEventListener('resize', handleResize);
+    mountRef.current.addEventListener('mousemove', handleMouseMove);
+    mountRef.current.addEventListener('mouseleave', handleMouseLeave);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (mountRef.current) {
+        mountRef.current.removeEventListener('mousemove', handleMouseMove);
+        mountRef.current.removeEventListener('mouseleave', handleMouseLeave);
+      }
       cancelAnimationFrame(animationFrameId);
       
       if (mountRef.current && renderer.domElement) {
@@ -156,16 +225,14 @@ export default function App() {
       material.dispose();
       renderer.dispose();
     };
-  }, []);
+  }, [speed, colorVoid, colorPrimary, colorSecondary, mouseStrength]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-white font-sans">
-      <style>{customStyles}</style>
-      
-      {/* Background Canvas */}
+    <div className={`relative w-full h-screen overflow-hidden bg-black font-sans ${className}`}>
+      {/* GLSL Canvas Background */}
       <div 
         ref={mountRef} 
-        className="absolute top-0 left-0 w-full h-full z-0"
+        className="absolute inset-0 w-full h-full z-0 cursor-crosshair"
       />
 
     </div>
