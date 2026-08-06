@@ -1,6 +1,6 @@
 {
   "slug": "quantum-mandala-hero",
-  "name": "Quantum Mandala",
+  "name": "IridescentObsidianBackground",
   "description": "Breathtaking, highly creative premium animation.",
   "category": "Background Animations",
   "tags": [
@@ -14,7 +14,10 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Touch Events",
+    "Glassmorphism",
+    "Glitch Effect"
   ],
   "tech_stack": [
     "React",
@@ -27,14 +30,17 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Touch Events",
+    "Glassmorphism",
+    "Glitch Effect"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-mandala-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-mandala-hero/index.jsx",
-  "created_at": "2026-07-30T07:36:14.658Z",
+  "created_at": "2026-08-06T06:32:11.557Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-mandala-hero/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-mandala-hero/video.webm"
 }
