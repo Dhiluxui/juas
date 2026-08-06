@@ -1,310 +1,210 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-// ============================================================================
-// Core WebGL Renderer
-// ============================================================================
-
-export function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-export interface ShaderBackgroundProps {
-  vertexShaderSource: string;
-  fragmentShaderSource: string;
+export interface IridescentObsidianBackgroundProps {
+  /** @title Animation Speed */
+  speed?: number;
+  /** @title Enable Mouse Interaction */
+  interactive?: boolean;
+  /** @title Overlay Content */
+  children?: React.ReactNode;
+  /** @title Extra CSS Classes */
   className?: string;
 }
 
-export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '' }: ShaderBackgroundProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+export const IridescentObsidianBackground = ({
+  speed = 1.0,
+  interactive = true,
+  children,
+  className = '',
+}: IridescentObsidianBackgroundProps) => {
+  const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!mountRef.current) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) {
-      console.error('WebGL not supported');
-      return;
-    }
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Program link error:', gl.getProgramInfoLog(program));
-      return;
-    }
-    
-    gl.useProgram(program);
+    const width = mountRef.current.clientWidth || window.innerWidth;
+    const height = mountRef.current.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
 
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
+    mountRef.current.appendChild(renderer.domElement);
 
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
+    const currentMouse = new THREE.Vector2(0.5, 0.5);
+    const targetMouse = new THREE.Vector2(0.5, 0.5);
 
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: currentMouse },
+      u_speed: { value: speed },
     };
-    window.addEventListener('mousemove', handleMouseMove);
 
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
       }
-    };
+    `;
 
-    const render = (time: number) => {
-      resize();
-
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
-
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
-    };
-  }, [vertexShaderSource, fragmentShaderSource]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
-  );
-}
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
+    const fragmentShader = `
       precision highp float;
-      uniform float uTime;
-      uniform vec2 uResolution;
-      uniform vec2 uMouse;
 
-      // 3D Noise for fluid simulation
-      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-      vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
 
-      float snoise(vec3 v) {
-          const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-          const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-
-          vec3 i  = floor(v + dot(v, C.yyy));
-          vec3 x0 = v - i + dot(i, C.xxx);
-          vec3 g = step(x0.yzx, x0.xyz);
-          vec3 l = 1.0 - g;
-          vec3 i1 = min(g.xyz, l.zxy);
-          vec3 i2 = max(g.xyz, l.zxy);
-
-          vec3 x1 = x0 - i1 + C.xxx;
-          vec3 x2 = x0 - i2 + C.yyy;
-          vec3 x3 = x0 - D.yyy;
-
-          i = mod289(i); 
-          vec4 p = permute( permute( permute( 
-                     i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-                   + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-                   + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-
-          float n_ = 0.142857142857;
-          vec3  ns = n_ * D.wyz - D.xzx;
-
-          vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-          vec4 x_ = floor(j * ns.z);
-          vec4 y_ = floor(j - 7.0 * x_);
-
-          vec4 x = x_ *ns.x + ns.yyyy;
-          vec4 y = y_ *ns.x + ns.yyyy;
-          vec4 h = 1.0 - abs(x) - abs(y);
-
-          vec4 b0 = vec4( x.xy, y.xy );
-          vec4 b1 = vec4( x.zw, y.zw );
-
-          vec4 s0 = floor(b0)*2.0 + 1.0;
-          vec4 s1 = floor(b1)*2.0 + 1.0;
-          vec4 sh = -step(h, vec4(0.0));
-
-          vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
-          vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
-
-          vec3 p0 = vec3(a0.xy,h.x);
-          vec3 p1 = vec3(a0.zw,h.y);
-          vec3 p2 = vec3(a1.xy,h.z);
-          vec3 p3 = vec3(a1.zw,h.w);
-
-          vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-          p0 *= norm.x;
-          p1 *= norm.y;
-          p2 *= norm.z;
-          p3 *= norm.w;
-
-          vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-          m = m * m;
-          return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-                                        dot(p2,x2), dot(p3,x3) ) );
-      }
-
-      float fbm(vec3 p) {
-          float f = 0.0;
-          float w = 0.5;
-          for (int i = 0; i < 5; i++) {
-              f += w * snoise(p);
-              p *= 2.0;
-              w *= 0.5;
-          }
-          return f;
+      vec3 palette(float t) {
+          vec3 a = vec3(0.5, 0.5, 0.5);
+          vec3 b = vec3(0.5, 0.5, 0.5);
+          vec3 c = vec3(1.0, 1.0, 1.0);
+          vec3 d = vec3(0.00, 0.25, 0.40);
+          return a + b * cos(6.28318 * (c * t + d));
       }
 
       void main() {
-          vec2 uv = gl_FragCoord.xy / uResolution.xy;
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
           vec2 p = uv * 2.0 - 1.0;
-          p.x *= uResolution.x / uResolution.y;
-          
-          vec2 m = uMouse.xy / uResolution.xy;
-          if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5);
+          p.x *= u_resolution.x / u_resolution.y;
 
-          // Domain warping
-          vec3 q = vec3(p * 2.0, uTime * 0.2);
+          vec2 m = (u_mouse - 0.5) * 2.0;
+          p += m * 0.1;
+
+          float t = u_time * 0.12 * u_speed;
+
+          vec2 q = p * vec2(1.3, 0.9);
           
-          // Influence mouse
-          q.xy -= (m - 0.5) * 2.0;
+          for (float i = 1.0; i <= 5.0; i++) {
+              float fi = i;
+              q.x += 0.35 / fi * cos(fi * 1.4 * q.y + t);
+              q.y += 0.35 / fi * cos(fi * 1.4 * q.x - t * 0.8);
+          }
+
+          float caOffset = 0.04;
+          float waveR = q.x * 2.2 - q.y * 2.2;
+          float waveG = q.x * 2.2 - q.y * 2.2 + caOffset;
+          float waveB = q.x * 2.2 - q.y * 2.2 + caOffset * 2.0;
+
+          float specR = pow(0.5 + 0.5 * sin(waveR), 20.0);
+          float specG = pow(0.5 + 0.5 * sin(waveG), 20.0);
+          float specB = pow(0.5 + 0.5 * sin(waveB), 20.0);
           
-          float n1 = fbm(q + vec3(0.0, 0.0, uTime * 0.1));
-          float n2 = fbm(q + vec3(n1, n1, uTime * 0.2) * 2.0);
-          float n3 = fbm(q + vec3(n2, n2, uTime * 0.3) * 3.0);
-          
-          vec3 col1 = vec3(0.1, 0.8, 0.9); // Cyan
-          vec3 col2 = vec3(0.8, 0.1, 0.9); // Magenta
-          vec3 col3 = vec3(0.05, 0.1, 0.4); // Deep Blue
-          
-          vec3 col = mix(col3, col1, smoothstep(-1.0, 1.0, n2));
-          col = mix(col, col2, smoothstep(-0.5, 1.0, n3));
-          
-          // Add highlights
-          col += vec3(1.0) * smoothstep(0.7, 1.0, n3) * 0.5;
-          
-          // Vignette
-          col *= 1.0 - length(p) * 0.4;
-          
-          col = pow(col, vec3(1.0 / 2.2)); // Gamma correction
-          
-          gl_FragColor = vec4(col, 1.0);
+          vec3 specular = vec3(specR, specG, specB) * 3.0;
+
+          float softFold = pow(0.5 + 0.5 * sin(waveG), 2.5);
+          vec3 ambientColor = palette(length(p) * 0.7 + t * 0.4);
+          vec3 ambient = ambientColor * softFold * 0.5;
+
+          vec3 baseColor = vec3(0.008, 0.008, 0.012);
+          vec3 finalColor = baseColor + specular + ambient;
+
+          float dist = length(uv - 0.5);
+          finalColor *= 1.0 - smoothstep(0.3, 1.3, dist);
+
+          finalColor = finalColor * finalColor * (3.0 - 2.0 * finalColor);
+
+          float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+          finalColor -= grain * 0.035;
+
+          gl_FragColor = vec4(finalColor, 1.0);
       }
-  `
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!interactive || !mountRef.current) return;
+      const rect = mountRef.current.getBoundingClientRect();
+      targetMouse.set(
+        (e.clientX - rect.left) / rect.width,
+        1.0 - (e.clientY - rect.top) / rect.height
+      );
+    };
+
+    if (interactive) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    }
+
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      
+      uniforms.u_time.value = clock.getElapsedTime();
+      
+      if (interactive) {
+        currentMouse.x += (targetMouse.x - currentMouse.x) * 0.06;
+        currentMouse.y += (targetMouse.y - currentMouse.y) * 0.06;
+        uniforms.u_mouse.value.set(currentMouse.x, currentMouse.y);
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      if (!mountRef.current) return;
+      const w = mountRef.current.clientWidth || window.innerWidth;
+      const h = mountRef.current.clientHeight || window.innerHeight;
+      
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (interactive) {
+        window.removeEventListener('mousemove', handleMouseMove);
+      }
+      cancelAnimationFrame(animationFrameId);
+      
+      if (mountRef.current && renderer.domElement && mountRef.current.contains(renderer.domElement)) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+    };
+  }, [speed, interactive]);
+
+  return (
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-[#000000] font-sans ${className}`}>
+      {/* Background WebGL Canvas Layer */}
+      <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-auto" />
+
+      {/* Foreground Content Layer */}
+      {children && (
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export interface FluidAetherBackgroundHeroProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children?: React.ReactNode;
+export default function App() {
+  return (
+    <IridescentObsidianBackground speed={1.0}>
+    </IridescentObsidianBackground>
+  );
 }
-
-export const FluidAetherBackgroundHero = ({ className = '', children, ...props }: FluidAetherBackgroundHeroProps) => (
-  <div className={`relative w-full h-full bg-[#050510] overflow-hidden font-sans ${className}`} {...props}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 0%, rgba(5, 5, 16, 0.6) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
