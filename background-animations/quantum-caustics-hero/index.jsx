@@ -22,9 +22,9 @@ function hexToRgb(hex: string) {
   ] : [1, 1, 1];
 }
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
+function ShaderBackground({
+  vertexShaderSource,
+  fragmentShaderSource,
   className = '',
   speed = 1.0,
   color1 = '#ff0000',
@@ -50,9 +50,9 @@ function ShaderBackground({
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
-    
+
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
+
     gl.useProgram(program);
 
     const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
@@ -61,7 +61,7 @@ function ShaderBackground({
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
+
     const positionLocation = gl.getAttribLocation(program, 'position');
     const aPositionLocation = gl.getAttribLocation(program, 'a_position');
     const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
@@ -73,7 +73,7 @@ function ShaderBackground({
     const uvBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
+
     const uvLocation = gl.getAttribLocation(program, 'uv');
     if (uvLocation >= 0) {
       gl.enableVertexAttribArray(uvLocation);
@@ -83,7 +83,7 @@ function ShaderBackground({
     const timeLocation = gl.getUniformLocation(program, 'iTime');
     const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
     const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
+
     const uTimeLocation = gl.getUniformLocation(program, 'u_time');
     const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
     const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
@@ -92,7 +92,7 @@ function ShaderBackground({
     const uTimeCamel = gl.getUniformLocation(program, 'uTime');
     const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
     const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
+
     const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
     const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
     const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
@@ -185,11 +185,11 @@ function ShaderBackground({
 
 const shaderData = {
   vertex: `
-    attribute vec2 a_position;
-    varying vec2 vUv;
-    void main() {
-        vUv = a_position * 0.5 + 0.5;
-        gl_Position = vec4(a_position, 0.0, 1.0);
+    attribute vec2 a_position; 
+    varying vec2 vUv; 
+    void main() { 
+      vUv = a_position * 0.5 + 0.5; 
+      gl_Position = vec4(a_position, 0.0, 1.0); 
     }
   `,
   fragment: `
@@ -201,6 +201,8 @@ const shaderData = {
 
     const float uSpeed = 1.0;
     const float uMouseStrength = 1.0;
+    
+    // Deep Ocean / Quantum Void Colors
     const vec3 uColorA = vec3(0.08, 0.05, 0.25);
     const vec3 uColorB = vec3(0.38, 0.40, 0.95);
     const vec3 uColorC = vec3(0.85, 0.35, 0.75);
@@ -208,18 +210,23 @@ const shaderData = {
     #define MAX_ITER 6
 
     void main() {
+        // Normalize coordinates and center them
         vec2 uv = gl_FragCoord.xy / uResolution.xy;
         vec2 p = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
-        vec2 mouse = (uMouse - 0.5) * 2.0;
+        
+        // Normalize mouse input
+        vec2 mouse = (uMouse / uResolution.xy) * 2.0 - 1.0;
 
         float t = uTime * 0.3 * uSpeed;
 
+        // Apply mouse interaction
         p += mouse * 0.2 * uMouseStrength;
 
         vec2 c = p;
         float intensity = 0.0;
         float cFreq = 2.5;
 
+        // The core logic for generating complex caustic networks using folded sine/cosine layers
         for (int n = 1; n < MAX_ITER; n++) {
             float fn = float(n);
             c.x += 0.3 / fn * sin(fn * cFreq * c.y + t + mouse.x * 0.5);
@@ -227,16 +234,18 @@ const shaderData = {
             intensity += (1.0 / fn) * abs(sin(c.x + c.y));
         }
 
+        // Sharpen the peaks of the waves to create the thin caustic lines
         intensity = pow(intensity, 2.2) * 0.15;
-
         float caustic = smoothstep(0.05, 0.8, intensity);
 
+        // Mix colors based on the caustic intensity to create a chromatic dispersion effect
         vec3 colR = uColorA * (caustic * 1.4);
         vec3 colG = uColorB * (caustic * 1.1 + sin(intensity * 12.0) * 0.2);
         vec3 colB = uColorC * (caustic * 0.9 + cos(intensity * 15.0) * 0.3);
 
         vec3 finalColor = vec3(colR.r, colG.g, colB.b);
 
+        // Add a subtle glowing core/vignette reversal based on distance from center
         float centerGlow = exp(-length(p) * 1.2) * 0.3;
         finalColor += uColorB * centerGlow;
 
@@ -246,13 +255,31 @@ const shaderData = {
 };
 
 export const QuantumCausticsHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#030308] overflow-hidden font-sans ${className}`}>
+  <div className={`relative w-full h-screen bg-[#05040a] overflow-hidden font-sans ${className}`}>
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+      <ShaderBackground 
+        vertexShaderSource={shaderData.vertex} 
+        fragmentShaderSource={shaderData.fragment} 
+        {...props} 
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(2, 2, 6, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
+    
+    {/* Radial Vignette Overlay to ensure text pops */}
+    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(5, 4, 10, 0.9) 100%)' }} />
+
+    {/* Content Overlay */}
+    <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+      <div className="pointer-events-auto text-center px-4">
+        {children}
+      </div>
     </div>
   </div>
 );
+
+export default function App() {
+  return (
+    <QuantumCausticsHero>
+  
+    </QuantumCausticsHero>
+  );
+}
