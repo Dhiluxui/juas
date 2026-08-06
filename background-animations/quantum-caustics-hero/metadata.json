@@ -1,7 +1,7 @@
 {
   "slug": "quantum-caustics-hero",
   "name": "Quantum Caustics",
-  "description": "Updated self-runnable animation.",
+  "description": "Quantum Caustics",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -13,7 +13,10 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Blur & Filter",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -25,13 +28,17 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Blur & Filter",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-caustics-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/quantum-caustics-hero/index.jsx",
-  "created_at": "2026-07-30T08:14:14.731Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-caustics-hero/thumbnail.png"
+  "created_at": "2026-08-06T05:33:22.559Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-caustics-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/quantum-caustics-hero/video.webm"
 }
