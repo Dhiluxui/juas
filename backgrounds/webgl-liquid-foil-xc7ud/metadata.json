@@ -17,7 +17,9 @@
     "useRef",
     "Glassmorphism",
     "Blur & Filter",
-    "Responsive"
+    "Responsive",
+    "Mouse Tracking",
+    "Morphing"
   ],
   "tech_stack": [
     "React",
@@ -33,14 +35,16 @@
     "useRef",
     "Glassmorphism",
     "Blur & Filter",
-    "Responsive"
+    "Responsive",
+    "Mouse Tracking",
+    "Morphing"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/webgl-liquid-foil-xc7ud/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/backgrounds/webgl-liquid-foil-xc7ud/index.jsx",
-  "created_at": "2026-08-01T17:29:21.742Z",
+  "created_at": "2026-08-06T05:37:18.450Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/webgl-liquid-foil-xc7ud/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/backgrounds/webgl-liquid-foil-xc7ud/video.webm"
 }
