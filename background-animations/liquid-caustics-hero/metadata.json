@@ -16,7 +16,12 @@
     "useRef",
     "Mouse Tracking",
     "Gradient",
-    "Glitch Effect"
+    "Glitch Effect",
+    "CSS Animations",
+    "Touch Events",
+    "Glassmorphism",
+    "Blur & Filter",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -31,14 +36,19 @@
     "useRef",
     "Mouse Tracking",
     "Gradient",
-    "Glitch Effect"
+    "Glitch Effect",
+    "CSS Animations",
+    "Touch Events",
+    "Glassmorphism",
+    "Blur & Filter",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-caustics-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/liquid-caustics-hero/index.jsx",
-  "created_at": "2026-07-30T07:28:08.953Z",
+  "created_at": "2026-08-06T06:59:17.759Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-caustics-hero/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/liquid-caustics-hero/video.webm"
 }
