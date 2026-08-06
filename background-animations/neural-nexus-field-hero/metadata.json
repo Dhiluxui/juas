@@ -1,7 +1,7 @@
 {
   "slug": "neural-nexus-field-hero",
-  "name": "Neural Nexus Field",
-  "description": "Updated self-runnable animation.",
+  "name": "Prismatic Bg",
+  "description": "This modernizes the implementation, safely handles resizing and component unmounting, and allows us to focus entirely on the mathematical beauty of the fragment shader.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -13,7 +13,18 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Morphing"
+    "Morphing",
+    "Spring Physics",
+    "Tailwind CSS",
+    "Three.js",
+    "Glassmorphism",
+    "Blur & Filter",
+    "3D Transform",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive",
+    "Particle System",
+    "Gradient"
   ],
   "tech_stack": [
     "React",
@@ -25,13 +36,24 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Morphing"
+    "Morphing",
+    "Spring Physics",
+    "Tailwind CSS",
+    "Three.js",
+    "Glassmorphism",
+    "Blur & Filter",
+    "3D Transform",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive",
+    "Particle System",
+    "Gradient"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-nexus-field-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/neural-nexus-field-hero/index.jsx",
-  "created_at": "2026-07-30T08:13:50.133Z",
+  "created_at": "2026-08-06T06:01:17.642Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/neural-nexus-field-hero/thumbnail.png"
 }
