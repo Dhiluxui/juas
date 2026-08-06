@@ -1,6 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
+
+// ============================================================================
+// Core WebGL Renderer
+// ============================================================================
+
+export function createShader(gl, type, source) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -13,33 +18,21 @@ function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+export function ShaderBackground({ vertexShaderSource, fragmentShaderSource, className = '', speed = 1.0 }) {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const targetMouseRef = useRef({ x: 0, y: 0 });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
 
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
@@ -51,7 +44,10 @@ function ShaderBackground({
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
+    }
     
     gl.useProgram(program);
 
@@ -80,33 +76,34 @@ function ShaderBackground({
       gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
     }
 
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
+    const timeLocation = gl.getUniformLocation(program, 'uTime');
+    const resolutionLocation = gl.getUniformLocation(program, 'uResolution');
+    const mouseLocation = gl.getUniformLocation(program, 'uMouse');
+    const speedLocation = gl.getUniformLocation(program, 'uSpeed');
 
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+      targetMouseRef.current.x = (e.clientX - rect.left) * dpr;
+      targetMouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    
+    // Add touch support for mobile
+    const handleTouchMove = (e) => {
+        if (e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            targetMouseRef.current.x = (e.touches[0].clientX - rect.left) * dpr;
+            targetMouseRef.current.y = canvas.height - (e.touches[0].clientY - rect.top) * dpr;
+        }
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchstart', handleTouchMove, { passive: true });
 
     let initialSet = false;
-    let animationFrameId: number;
+    let animationFrameId;
     let startTime = performance.now();
 
     const resize = () => {
@@ -120,14 +117,20 @@ function ShaderBackground({
       }
     };
 
-    const render = (time: number) => {
+    const render = (time) => {
       resize();
 
       if (!initialSet && canvas.width > 0) {
         mouseRef.current.x = canvas.width / 2;
         mouseRef.current.y = canvas.height / 2;
+        targetMouseRef.current.x = canvas.width / 2;
+        targetMouseRef.current.y = canvas.height / 2;
         initialSet = true;
       }
+
+      // Silky smooth mouse interpolation
+      mouseRef.current.x += (targetMouseRef.current.x - mouseRef.current.x) * 0.03;
+      mouseRef.current.y += (targetMouseRef.current.y - mouseRef.current.y) * 0.03;
 
       gl.clearColor(0, 0, 0, 1);
       gl.clear(gl.COLOR_BUFFER_BIT);
@@ -137,25 +140,7 @@ function ShaderBackground({
       if (timeLocation !== null) gl.uniform1f(timeLocation, t);
       if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
       if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
+      if (speedLocation !== null) gl.uniform1f(speedLocation, speed);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(render);
@@ -165,6 +150,8 @@ function ShaderBackground({
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchMove);
       cancelAnimationFrame(animationFrameId);
       gl.deleteProgram(program);
       gl.deleteShader(vertexShader);
@@ -172,7 +159,7 @@ function ShaderBackground({
       gl.deleteBuffer(positionBuffer);
       gl.deleteBuffer(uvBuffer);
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [vertexShaderSource, fragmentShaderSource, speed]);
 
   return (
     <canvas
@@ -183,94 +170,156 @@ function ShaderBackground({
   );
 }
 
+
+// ============================================================================
+// Shader Data: Iridescent Obsidian
+// ============================================================================
+
 const shaderData = {
   vertex: `
     attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
+    void main() { 
+      gl_Position = vec4(position, 0.0, 1.0); 
+    }
   `,
   fragment: `
     precision highp float;
-    uniform float uTime;
     uniform vec2 uResolution;
+    uniform float uTime;
     uniform vec2 uMouse;
+    uniform float uSpeed;
 
+    // 2D Rotation Matrix
     mat2 rot(float a) {
         float s = sin(a), c = cos(a);
         return mat2(c, -s, s, c);
     }
 
-    vec3 palette(float t) {
-        vec3 a = vec3(0.5, 0.5, 0.5);
-        vec3 b = vec3(0.5, 0.5, 0.5);
-        vec3 c = vec3(1.0, 1.0, 1.0);
-        vec3 d = vec3(0.263, 0.416, 0.557);
-        return a + b * cos(6.28318 * (c * t + d));
+    // Advanced Fluid Domain Warping
+    // Iterates multiple times to create organic, overlapping folds
+    vec2 fluidWarp(vec2 p, float t, float offset) {
+        vec2 q = p;
+        for(float i = 1.0; i <= 5.0; i++) {
+            float fi = i;
+            // The X/Y offsets create the diagonal stretching typical of liquid reflections
+            q.x += (0.35 / fi) * sin(fi * 1.8 * q.y + t + offset);
+            q.y += (0.35 / fi) * cos(fi * 1.8 * q.x - t + offset);
+        }
+        return q;
     }
 
     void main() {
-        vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
-        vec2 m = (uMouse * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
+        // Normalize coordinates and account for aspect ratio
+        vec2 uv = gl_FragCoord.xy / uResolution.xy;
+        vec2 p = uv * 2.0 - 1.0;
+        p.x *= uResolution.x / uResolution.y;
         
-        if (length(uMouse) < 10.0) m = vec2(0.0);
+        // Mouse parallax integration
+        vec2 mouse = (uMouse * 2.0 - uResolution.xy) / min(uResolution.x, uResolution.y);
+        if(length(uMouse) < 0.1) mouse = vec2(0.0); // Default to 0 if unused
+        p += mouse * 0.15; // Shift the domain based on mouse
+
+        // Diagonal stretch to match the sweeping aesthetic of the reference image
+        p *= rot(0.7); // Rotate approximately 45 degrees
+        p.y *= 1.4;    // Stretch vertically to make long flowing liquid streaks
+
+        float t = uTime * uSpeed * 0.15;
         
-        vec2 p = uv;
+        // --- CHROMATIC ABERRATION SETUP ---
+        // By calculating the fluid distortion three times with a slight spatial offset,
+        // we force the sharp ridges to separate into RGB channels at the edges.
+        float caOffset = 0.06; 
         
-        // Gentle parallax from mouse interaction
-        p -= m * 0.05;
+        vec2 qR = fluidWarp(p, t, 0.0);
+        vec2 qG = fluidWarp(p, t, caOffset);
+        vec2 qB = fluidWarp(p, t, caOffset * 2.0);
+
+        // --- SPECULAR RIDGE CALCULATION ---
+        // The core math for the "liquid glass" look.
+        // sin() creates waves, 1.0 - abs(sin()) inverts them into sharp ridges.
+        float freq = 2.0;
+        float rWave = 1.0 - abs(sin(qR.x * freq + qR.y * freq));
+        float gWave = 1.0 - abs(sin(qG.x * freq + qG.y * freq));
+        float bWave = 1.0 - abs(sin(qB.x * freq + qB.y * freq));
         
-        vec2 uv0 = p;
-        vec3 finalColor = vec3(0.0);
-        float t = uTime * 0.15;
+        // pow() sharpens the peaks into razor-thin specular highlights.
+        float rSharp = pow(rWave, 18.0);
+        float gSharp = pow(gWave, 18.0);
+        float bSharp = pow(bWave, 18.0);
         
-        for (float i = 0.0; i < 4.0; i++) {
-            // Complex space folding for the cymatic mandala
-            p = fract(p * 1.4) - 0.5;
-            
-            float d = length(p) * exp(-length(uv0));
-            
-            vec3 col = palette(length(uv0) + i * 0.3 - t);
-            
-            // Cymatic resonance equation (polar interference)
-            float angle = atan(p.y, p.x);
-            float petals = sin(d * 10.0 + t) * sin(angle * 8.0 - t * 2.0);
-            
-            d = sin(d * 12.0 + petals + t) / 12.0;
-            d = abs(d);
-            
-            // Luminous glow falloff
-            d = pow(0.015 / (d + 0.001), 1.2);
-            
-            finalColor += col * d;
-        }
+        // A secondary, softer power creates the glowing "dispersion" rainbow bleed
+        float rGlow = pow(rWave, 3.0);
+        float gGlow = pow(gWave, 3.0);
+        float bGlow = pow(bWave, 3.0);
+
+        // --- CORE HIGHLIGHT ---
+        // Where all three RGB channels overlap perfectly, it creates a blinding white-hot core
+        float core = pow(rWave * gWave * bWave, 3.0) * 4.0; 
+
+        // --- COMPOSITION ---
+        vec3 bg = vec3(0.005, 0.005, 0.01); // Deep, rich obsidian black
+
+        // Assemble the optical layers
+        // We add a warm golden tint to the glow layer to match the reference image
+        vec3 glowColor = vec3(rGlow * 1.0, gGlow * 0.8, bGlow * 0.5) * 0.6;
+        vec3 sharpColor = vec3(rSharp, gSharp, bSharp) * 1.5;
         
-        // Central quantum core
-        float coreDist = length(uv0) + sin(t * 3.0) * 0.02;
-        float core = 0.03 / (abs(coreDist) + 0.01);
-        finalColor += vec3(0.3, 0.8, 1.0) * core * 0.6;
+        vec3 col = bg + glowColor + sharpColor + vec3(core);
+
+        // --- ENVIRONMENTAL LIGHTING ---
+        // Adds a very subtle, broad gradient to simulate a studio light environment
+        float envLight = sin(uv.x * 2.0 - uv.y * 2.0 + t);
+        col += vec3(0.08, 0.1, 0.15) * smoothstep(0.4, 1.0, envLight) * 0.3;
+
+        // --- POST PROCESSING ---
+        // Vignette to frame the composition and draw the eye to the bright streaks
+        float vignette = length(uv - 0.5);
+        col *= 1.0 - smoothstep(0.4, 1.2, vignette);
         
-        // Cosmic void background
-        vec3 bg = vec3(0.02, 0.0, 0.05) * (1.0 - length(uv0) * 0.5);
-        finalColor = mix(bg, finalColor, min(length(finalColor), 1.0));
+        // Cinematic ACES-style Tone Mapping for rich highlights and deep shadows
+        col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
         
-        // Vignette
-        finalColor *= smoothstep(2.5, 0.2, length(uv0));
-        
-        // ACES Tonemapping
-        finalColor = (finalColor * (2.51 * finalColor + 0.03)) / (finalColor * (2.43 * finalColor + 0.59) + 0.14);
-        
-        gl_FragColor = vec4(finalColor, 1.0);
+        // Slight Gamma Correction for extra vibrancy
+        col = pow(col, vec3(1.1)); 
+
+        gl_FragColor = vec4(col, 1.0);
     }
   `
 };
 
-export const QuantumMandalaHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#010002] overflow-hidden font-sans ${className}`}>
+
+export const IridescentObsidianHero = ({ className = '', children }) => (
+  <div className={`relative w-full h-full bg-[#030305] overflow-hidden font-sans ${className}`}>
     <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+      <ShaderBackground 
+        vertexShaderSource={shaderData.vertex} 
+        fragmentShaderSource={shaderData.fragment} 
+        speed={1.0}
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 20%, rgba(1, 0, 2, 0.9) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
+    
+    {/* Optional Subtle Overlay Gradient to ensure UI elements pop */}
+    <div className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+    
+    {/* Foreground Children Slot */}
+    <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pointer-events-none">
+      <div className="pointer-events-auto">
+        {children}
+      </div>
     </div>
   </div>
 );
+
+
+// ============================================================================
+// Main App Component
+// ============================================================================
+export default function App() {
+  return (
+    <div className="w-screen h-screen">
+      <IridescentObsidianHero>
+        {/* Demonstration UI to show integration */}
+      </IridescentObsidianHero>
+    </div>
+  );
+}
