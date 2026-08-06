@@ -1,7 +1,7 @@
 {
   "slug": "ethereal-liquid-prism-hero",
   "name": "Ethereal Liquid Prism",
-  "description": "Updated self-runnable animation.",
+  "description": "Neon Ethereal Liquid Prism",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -34,7 +34,7 @@
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-liquid-prism-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/ethereal-liquid-prism-hero/index.jsx",
-  "created_at": "2026-07-30T11:47:45.712Z",
+  "created_at": "2026-08-06T05:15:35.948Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-liquid-prism-hero/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-liquid-prism-hero/video.webm"
 }
