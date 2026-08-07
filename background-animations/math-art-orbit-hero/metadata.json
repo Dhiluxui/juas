@@ -1,7 +1,7 @@
 {
   "slug": "math-art-orbit-hero",
-  "name": "Math Art Orbit",
-  "description": "Updated self-runnable animation.",
+  "name": "Math Art lines",
+  "description": "anime speed lines because it was using a simple radial threshold",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -15,7 +15,17 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Glassmorphism",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "CSS Animations",
+    "Blur & Filter",
+    "Responsive",
+    "Magnetic",
+    "Morphing",
+    "3D Transform"
   ],
   "tech_stack": [
     "React",
@@ -29,14 +39,24 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Glassmorphism",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "CSS Animations",
+    "Blur & Filter",
+    "Responsive",
+    "Magnetic",
+    "Morphing",
+    "3D Transform"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/math-art-orbit-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/math-art-orbit-hero/index.jsx",
-  "created_at": "2026-07-30T08:07:09.687Z",
+  "created_at": "2026-08-07T02:52:04.880Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/math-art-orbit-hero/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/math-art-orbit-hero/video.webm"
 }
