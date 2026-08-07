@@ -1,7 +1,7 @@
 {
   "slug": "fractal-void-hero",
-  "name": "Fractal Void",
-  "description": "Updated self-runnable animation.",
+  "name": "Aurora Frost Slats",
+  "description": "perfectly match the deep violet/purple bleeding into the bright white/cyan core.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -15,7 +15,13 @@
     "useRef",
     "Mouse Tracking",
     "Glassmorphism",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Blur & Filter",
+    "Noise / Randomness",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -29,13 +35,20 @@
     "useRef",
     "Mouse Tracking",
     "Glassmorphism",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Blur & Filter",
+    "Noise / Randomness",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fractal-void-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/fractal-void-hero/index.jsx",
-  "created_at": "2026-07-30T09:34:25.093Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fractal-void-hero/thumbnail.png"
+  "created_at": "2026-08-07T10:42:37.614Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fractal-void-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fractal-void-hero/video.webm"
 }
