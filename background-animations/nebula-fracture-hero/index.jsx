@@ -1,360 +1,302 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
+export interface AstralFlare2DProps {
+  /* @title Animation Speed */
+  speed?: number;
+  /* @title Overall Hue Shift (-1.0 to 1.0) */
+  hueShift?: number;
+  /* @title Children Content Overlay */
+  children?: React.ReactNode;
+  /* @title Additional CSS Classes */
+  className?: string;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
+export const AstralFlare2D = ({
+speed = 1.0,
+hueShift = 0.0,
+children,
+className = '',
+}: AstralFlare2DProps) => {
+const mountRef = useRef(null);
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+// Use refs to track smooth mouse interpolation
+const mouseTarget = useRef(new THREE.Vector2(0, 0));
+const mouseCurrent = useRef(new THREE.Vector2(0, 0));
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+useEffect(() => {
+const container = mountRef.current;
+if (!container) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+// 1. Scene, Camera, Renderer Setup
+const scene = new THREE.Scene();
+// Orthographic camera flawlessly bounds our full-screen 2D shader
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
+const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+// Cap pixel ratio for performance while maintaining crispness on Retina
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
-    };
-
-    const render = (time: number) => {
-      resize();
-
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
-
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
-      
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
-    };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
-  );
-}
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-      precision highp float;
-      uniform float uTime;
-      uniform vec2 uResolution;
-      uniform vec2 uMouse;
-
-      mat2 rot(float a) {
-          float s = sin(a), c = cos(a);
-          return mat2(c, -s, s, c);
-      }
-      
-      // Better 3D noise for soft volumetric clouds
-      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
-      vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
-
-      float snoise(vec3 v) {
-        const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
-        const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
-
-        vec3 i  = floor(v + dot(v, C.yyy) );
-        vec3 x0 = v - i + dot(i, C.xxx) ;
-
-        vec3 g = step(x0.yzx, x0.xyz);
-        vec3 l = 1.0 - g;
-        vec3 i1 = min( g.xyz, l.zxy );
-        vec3 i2 = max( g.xyz, l.zxy );
-
-        vec3 x1 = x0 - i1 + C.xxx;
-        vec3 x2 = x0 - i2 + C.yyy;
-        vec3 x3 = x0 - D.yyy;
-
-        i = mod289(i); 
-        vec4 p = permute( permute( permute( 
-                   i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-                 + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
-                 + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
-
-        float n_ = 0.142857142857;
-        vec3  ns = n_ * D.wyz - D.xzx;
-
-        vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-
-        vec4 x_ = floor(j * ns.z);
-        vec4 y_ = floor(j - 7.0 * x_ );
-
-        vec4 x = x_ *ns.x + ns.yyyy;
-        vec4 y = y_ *ns.x + ns.yyyy;
-        vec4 h = 1.0 - abs(x) - abs(y);
-
-        vec4 b0 = vec4( x.xy, y.xy );
-        vec4 b1 = vec4( x.zw, y.zw );
-
-        vec4 s0 = floor(b0)*2.0 + 1.0;
-        vec4 s1 = floor(b1)*2.0 + 1.0;
-        vec4 sh = -step(h, vec4(0.0));
-
-        vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
-        vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
-
-        vec3 p0 = vec3(a0.xy,h.x);
-        vec3 p1 = vec3(a0.zw,h.y);
-        vec3 p2 = vec3(a1.xy,h.z);
-        vec3 p3 = vec3(a1.zw,h.w);
-
-        vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
-        p0 *= norm.x;
-        p1 *= norm.y;
-        p2 *= norm.z;
-        p3 *= norm.w;
-
-        vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-        m = m * m;
-        return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
-                                      dot(p2,x2), dot(p3,x3) ) );
-      }
-
-      float fbm(vec3 p) {
-          float f = 0.0, w = 0.5;
-          for(int i = 0; i < 5; i++) {
-              f += w * snoise(p);
-              p *= 2.0; w *= 0.5;
-          }
-          return f;
-      }
-      
-      float starField(vec2 uv) {
-          // Simple star field
-          float star = fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
-          star = smoothstep(0.995, 1.0, star);
-          // Twinkle
-          float twinkle = sin(uTime * 3.0 + uv.x * 100.0) * 0.5 + 0.5;
-          return star * twinkle;
-      }
-
-      void main() {
-          vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
-          vec2 m = uMouse.xy / uResolution.xy;
-          if(m.x == 0.0 && m.y == 0.0) m = vec2(0.5);
-
-          vec3 ro = vec3(0.0, 0.0, -2.0);
-          vec3 rd = normalize(vec3(uv, 1.0));
-          
-          rd.xy *= rot((m.x - 0.5) * 1.0);
-          rd.yz *= rot((m.y - 0.5) * 1.0);
-          
-          float t = 0.0;
-          vec3 col = vec3(0.0);
-          
-          // Background stars
-          col += vec3(1.0, 0.9, 0.8) * starField(uv * 10.0 + rd.xy * 2.0) * 1.5;
-          
-          // Volumetric Nebula Raymarching
-          float density = 0.0;
-          for(int i = 0; i < 40; i++) {
-              vec3 p = ro + rd * t;
-              
-              // Rotate space slightly over time
-              p.xy *= rot(uTime * 0.05 + p.z * 0.1);
-              
-              // Noise sample
-              float n = fbm(p * 1.2 + vec3(0.0, 0.0, uTime * 0.1));
-              
-              // Soft cloud edges
-              float localDensity = smoothstep(0.0, 1.0, n);
-              
-              if(localDensity > 0.0) {
-                  // Beautiful space colors: Teal / Purple / Pink
-                  vec3 c1 = vec3(0.1, 0.8, 0.9); // Teal
-                  vec3 c2 = vec3(0.8, 0.2, 0.9); // Pink/Purple
-                  
-                  // Mix colors based on position
-                  vec3 cloudCol = mix(c1, c2, sin(p.x * 2.0 + uTime * 0.2) * 0.5 + 0.5);
-                  
-                  // Add self-shadowing and light scattering
-                  float absorb = exp(-density * 2.0);
-                  col += cloudCol * localDensity * 0.12 * absorb;
-                  density += localDensity * 0.1;
-              }
-              
-              t += 0.15 + (float(i) * 0.005); // Increasing step size to go deeper
-              
-              if(density > 1.0) break;
-          }
-          
-          // Outer cosmic background glow
-          col += vec3(0.05, 0.0, 0.1) * (1.0 - length(uv));
-          
-          col = clamp((col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14), 0.0, 1.0);
-          
-          // Subtle vignette
-          col *= 1.0 - 0.5 * dot(uv, uv);
-          
-          gl_FragColor = vec4(pow(col, vec3(1.0 / 2.2)), 1.0);
-      }
-  `
+const updateSize = () => {
+  const width = container.clientWidth || window.innerWidth;
+  const height = container.clientHeight || window.innerHeight;
+  renderer.setSize(width, height);
+  return { width, height };
 };
 
-export const NebulaFractureHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#010103] overflow-hidden font-sans ${className}`} {...props}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(1, 1, 3, 0.9) 100%)' }} />
+const { width, height } = updateSize();
+container.appendChild(renderer.domElement);
+
+// 2. Uniform Setup
+const uniforms = {
+  u_time: { value: 0.0 },
+  u_resolution: { value: new THREE.Vector2(width, height) },
+  u_mouse: { value: new THREE.Vector2(0, 0) },
+  u_speed: { value: speed },
+  u_hueShift: { value: hueShift },
+};
+
+// 3. Shaders
+const vertexShader = `
+  void main() {
+    gl_Position = vec4(position, 1.0);
+  }
+`;
+
+// The Fragment Shader recreates the entire After Effects composition in one pass
+const fragmentShader = `
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+  uniform float u_speed;
+  uniform float u_hueShift;
+
+  // Coordinate rotation matrix
+  mat2 rot(float a) {
+      float s = sin(a), c = cos(a);
+      return mat2(c, -s, s, c);
+  }
+
+  // 2D Random generator
+  float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+  }
+
+  // 2D Value Noise
+  float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      // Quintic interpolation curve
+      vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+      return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                 mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+  }
+
+  // Fractional Brownian Motion for the organic "Fractal Noise" texture
+  float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      mat2 r = rot(0.37); // Rotate layers to reduce grid artifacts
+      for(int i = 0; i < 6; i++) {
+          v += a * noise(p);
+          p = r * p * 2.0;
+          a *= 0.5;
+      }
+      return v;
+  }
+
+  // Hue shifting utility
+  vec3 hueShift(vec3 color, float shift) {
+      vec3 P = vec3(0.55735) * dot(vec3(0.55735), color);
+      vec3 U = color - P;
+      vec3 V = cross(vec3(0.55735), U);    
+      color = U * cos(shift * 6.2832) + V * sin(shift * 6.2832) + P;
+      return color;
+  }
+
+  void main() {
+      // Normalize pixel coordinates (-1 to 1) and correct aspect ratio
+      vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.y, u_resolution.x);
+      
+      // Smooth, subtle mouse interaction (parallax tilt)
+      vec2 m = u_mouse / u_resolution.xy;
+      m = (m - 0.5) * 2.0;
+      uv -= m * 0.08;
+
+      float t = u_time * u_speed;
+
+      // --- AFTER EFFECTS SIM: Transform & Composition Setup ---
+      // Rotate the coordinate space diagonally so the flare shoots from bottom-left to top-right
+      vec2 p = uv * rot(-0.65);
+      
+      // Offset the head of the comet slightly off-center
+      p.x -= 0.15; 
+      p.y += 0.05;
+
+      // --- AFTER EFFECTS SIM: S. Shake & Mesh Warp ---
+      // Domain Warping: Distort the Y axis based on X and Time to make a wavy, organic tail
+      // The smoothstep ensures the "head" (x=0) stays solid, while the tail (x<0) violently waves
+      float warp = fbm(vec2(p.x * 2.5 - t * 3.0, p.y * 6.0 + t * 1.5));
+      p.y += (warp - 0.5) * 0.35 * smoothstep(0.2, -1.5, p.x); 
+      
+      // --- AFTER EFFECTS SIM: Polar Coordinates & Optical Flares ---
+      // Convert to polar to create sweeping radial streaks
+      float r = length(p);
+      float a = atan(p.y, p.x);
+      
+      // Create fast-moving streaky noise radiating from the center
+      float streakNoise = fbm(vec2(a * 5.0, r * 2.0 - t * 5.0));
+      // Sharpen the noise into distinct bands/rays
+      float streaks = smoothstep(0.3, 0.9, streakNoise);
+
+      // --- SHAPE GENERATION: The Comet Body ---
+      // Head falls off extremely fast in +X. Tail extends slowly into -X.
+      float headFalloff = exp(-p.x * 12.0) * step(0.0, p.x);
+      float tailFalloff = exp(p.x * 1.8) * step(p.x, 0.0);
+      float xMask = headFalloff + tailFalloff;
+      
+      // Thickness expands smoothly along the tail to create a fan effect
+      float thickness = mix(0.04, 0.65, smoothstep(0.1, -2.5, p.x));
+      
+      // Y-axis mask: Use exponential decay modulated by our radial streaks
+      // This breaks the solid shape into hundreds of wispy, fiery tendrils
+      float yMask = exp(-abs(p.y) / (thickness * (0.2 + 0.8 * streaks)));
+      
+      float body = xMask * yMask;
+
+      // --- COLOR MAPPING ---
+      vec3 finalColor = vec3(0.0);
+      
+      // 1. Outer Cosmic Aura (Deep Magenta/Purple)
+      vec3 auraCol = vec3(0.4, 0.0, 0.8);
+      finalColor += auraCol * pow(body, 0.7) * 1.5;
+      
+      // 2. Mid Energy Flare (Electric Cyan / Blue)
+      vec3 midCol = vec3(0.1, 0.7, 1.0);
+      float midMask = exp(-abs(p.y) / (thickness * 0.35)) * xMask;
+      finalColor = mix(finalColor, midCol, midMask * 0.9 * streaks);
+      
+      // 3. Ultra-hot Inner Core (Bright Pink/White)
+      vec3 coreCol = vec3(1.0, 0.8, 0.95);
+      float coreMask = exp(-abs(p.y) / (thickness * 0.08)) * exp(p.x * 5.0) * step(p.x, 0.2);
+      finalColor += coreCol * coreMask * 2.5;
+
+      // --- AFTER EFFECTS SIM: Lens Flare 4-Point Star ---
+      // Placed exactly at the head of the comet
+      float starR = length(p);
+      float starA = atan(p.y, p.x);
+      // Soft ambient spherical glow
+      float starGlow = exp(-starR * 15.0);
+      // Sharp intersecting horizontal/vertical light spikes
+      float starCross = exp(-starR * 45.0) * (pow(abs(cos(starA * 2.0)), 40.0) + pow(abs(cos(starA * 2.0 + 1.57)), 40.0));
+      
+      finalColor += vec3(1.0, 0.9, 1.0) * (starGlow * 0.6 + starCross * 4.0);
+
+      // Apply user-defined hue shift
+      finalColor = hueShift(finalColor, u_hueShift);
+
+      // --- BACKGROUND ---
+      // Very dark, deep cosmic void
+      vec3 bg = vec3(0.005, 0.002, 0.015);
+      finalColor = max(finalColor, bg);
+
+      // --- AFTER EFFECTS SIM: Camera Lens Blur & Post Processing ---
+      // S-Curve Contrast for deep, cinematic colors
+      finalColor = finalColor * finalColor * (3.0 - 2.0 * finalColor);
+      
+      // Subtle Vignette based on screen distance
+      finalColor *= 1.0 - smoothstep(1.0, 2.5, length(uv));
+
+      // Film Grain / Dither to prevent color banding in dark gradients
+      finalColor += hash(uv * 100.0 + t) * 0.025;
+
+      gl_FragColor = vec4(finalColor, 1.0);
+  }
+`;
+
+const material = new THREE.ShaderMaterial({
+  uniforms: uniforms,
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+});
+
+const geometry = new THREE.PlaneGeometry(2, 2);
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+
+// 4. Input & Animation Loop
+const handleMouseMove = (event: MouseEvent) => {
+  const rect = container.getBoundingClientRect();
+  mouseTarget.current.x = event.clientX - rect.left;
+  mouseTarget.current.y = rect.height - (event.clientY - rect.top);
+};
+
+window.addEventListener('mousemove', handleMouseMove);
+
+const clock = new THREE.Clock();
+let animationFrameId: number;
+
+const animate = () => {
+  animationFrameId = requestAnimationFrame(animate);
+  
+  uniforms.u_time.value = clock.getElapsedTime();
+  uniforms.u_speed.value = speed;
+  uniforms.u_hueShift.value = hueShift;
+
+  // Interpolate mouse movement for buttery smooth parallax
+  mouseCurrent.current.lerp(mouseTarget.current, 0.05);
+  uniforms.u_mouse.value.copy(mouseCurrent.current);
+
+  renderer.render(scene, camera);
+};
+
+animate();
+
+// 5. Resize & Cleanup
+const handleResize = () => {
+  if (!container) return;
+  const { width, height } = updateSize();
+  uniforms.u_resolution.value.set(width, height);
+};
+
+window.addEventListener('resize', handleResize);
+
+return () => {
+  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('mousemove', handleMouseMove);
+  cancelAnimationFrame(animationFrameId);
+
+  if (container && renderer.domElement && container.contains(renderer.domElement)) {
+    container.removeChild(renderer.domElement);
+  }
+
+  geometry.dispose();
+  material.dispose();
+  renderer.dispose();
+};
+
+
+}, [speed, hueShift]);
+
+return (
+<div className={`relative w-full h-full min-h-[500px] overflow-hidden bg-[#010004] font-sans ${className}`}>
+{/* 2D WebGL Canvas Layer */}
+<div ref={mountRef} className="absolute inset-0 w-full h-full" />
+
+  {/* Content Overlay Layer */}
+  {children && (
     <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
+      <div className="pointer-events-auto h-full w-full">
+        {children}
+      </div>
     </div>
-  </div>
+  )}
+</div>
+
+
 );
+};
+
+export default AstralFlare2D;
