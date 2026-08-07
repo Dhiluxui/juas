@@ -1,299 +1,320 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
+export interface EclipseAuraBackgroundProps {
+  /** Animation Speed */
+  speed?: number;
+  /** Top Ray Color (Orange) */
+  colorTop?: string;
+  /** Middle Ray Color (Pink/Magenta) */
+  colorMid?: string;
+  /** Bottom Ray Color (Blue) */
+  colorBottom?: string;
+  /** Eclipse Radius Size */
+  eclipseRadius?: number;
+  /** Overlay Content */
+  children?: React.ReactNode;
+  /** Extra CSS Classes */
+  className?: string;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
+export const EclipseAuraBackground = ({
   speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+  colorTop = '#FF7A00',    // Warm vibrant orange
+  colorMid = '#FF007F',    // Hot neon pink
+  colorBottom = '#0066FF', // Deep electric blue
+  eclipseRadius = 0.85,    // Size of the dark curved mask
+  children,
+  className = '',
+}: EclipseAuraBackgroundProps) => {
+  const mountRef = useRef(null);
+  const mouseTarget = useRef(new THREE.Vector2(0.5, 0.5));
+  const mouseCurrent = useRef(new THREE.Vector2(0.5, 0.5));
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
+    // 1. Scene, Camera, Renderer Setup
+    const scene = new THREE.Scene();
+    // Orthographic camera flawlessly bounds our full-screen 2D shader
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    // Cap pixel ratio for performance while maintaining crispness on Retina
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
+    const updateSize = () => {
+      const width = container.clientWidth || window.innerWidth;
+      const height = container.clientHeight || window.innerHeight;
+      renderer.setSize(width, height);
+      return { width, height };
     };
 
-    const render = (time: number) => {
-      resize();
+    const { width, height } = updateSize();
+    container.appendChild(renderer.domElement);
 
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
+    // Utility to convert hex strings to THREE.Vector3 RGB values for shaders
+    const hexToVec3 = (hex: string) => {
+      const color = new THREE.Color(hex);
+      return new THREE.Vector3(color.r, color.g, color.b);
+    };
+
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: new THREE.Vector2(0, 0) },
+      u_speed: { value: speed },
+      u_eclipseRadius: { value: eclipseRadius },
+      u_colorTop: { value: hexToVec3(colorTop) },
+      u_colorMid: { value: hexToVec3(colorMid) },
+      u_colorBottom: { value: hexToVec3(colorBottom) },
+    };
+
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
       }
+    `;
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
+    // This shader recreates the soft, volumetric light rays and the sharp 
+    // eclipse mask using polar coordinates and fractional brownian motion.
+    const fragmentShader = `
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
+      uniform float u_eclipseRadius;
       
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
+      uniform vec3 u_colorTop;
+      uniform vec3 u_colorMid;
+      uniform vec3 u_colorBottom;
 
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
-    };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
-  );
-}
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-      precision highp float;
-      uniform float uTime;
-      uniform vec2 uResolution;
-      uniform vec2 uMouse;
-
-      vec2 hash2(vec2 p) {
-          vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
-          p3 += dot(p3, p3.yzx + 33.33);
-          return fract((p3.xx + p3.yz) * p3.zy);
-      }
-
-      float cellularEdge(vec2 uv, float t) {
-          vec2 i = floor(uv);
-          vec2 f = fract(uv);
-          
-          float min_dist1 = 8.0;
-          float min_dist2 = 8.0;
-
-          for(int y = -1; y <= 1; y++) {
-              for(int x = -1; x <= 1; x++) {
-                  vec2 neighbor = vec2(float(x), float(y));
-                  vec2 point = hash2(i + neighbor);
-                  
-                  point = 0.5 + 0.5 * sin(t * 0.8 + 6.2831 * point);
-                  
-                  vec2 diff = neighbor + point - f;
-                  float dist = dot(diff, diff); 
-
-                  if(dist < min_dist1) {
-                      min_dist2 = min_dist1;
-                      min_dist1 = dist;
-                  } else if(dist < min_dist2) {
-                      min_dist2 = dist;
-                  }
-              }
-          }
-          
-          return sqrt(min_dist2) - sqrt(min_dist1);
-      }
-
+      // 2D Rotation Matrix
       mat2 rot(float a) {
           float s = sin(a), c = cos(a);
           return mat2(c, -s, s, c);
       }
 
+      // Simple 2D Hash for Noise
+      float hash(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+      }
+
+      // Smooth Value Noise
+      float noise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(
+              mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+              mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+              u.y
+          );
+      }
+
+      // Fractional Brownian Motion (FBM)
+      float fbm(vec2 p) {
+          float v = 0.0;
+          float a = 0.5;
+          mat2 r = rot(0.37);
+          for (int i = 0; i < 5; i++) {
+              v += a * noise(p);
+              p = r * p * 2.0;
+              a *= 0.5;
+          }
+          return v;
+      }
+
       void main() {
-          vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
-          vec2 mouse = (uMouse - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
-
-          float t = uTime * 0.4;
-          vec3 finalColor = vec3(0.0);
-
-          float distToMouse = length(uv - mouse);
-          float mouseForce = exp(-distToMouse * 3.0); 
-          vec2 mouseDir = normalize(uv - mouse + 0.0001);
+          // Normalize pixel coordinates (-1 to 1)
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+          vec2 p = uv * 2.0 - 1.0;
           
-          uv -= vec2(-mouseDir.y, mouseDir.x) * mouseForce * 0.2; 
-          uv += mouseDir * mouseForce * 0.1;
+          // Aspect correction
+          p.x *= u_resolution.x / u_resolution.y;
 
-          vec2 uv1 = uv * 3.5;
-          uv1.x += sin(uv.y * 2.0 + t) * 0.3;
-          uv1.y += cos(uv.x * 2.0 - t) * 0.3;
+          // Parallax effect driven by smooth mouse coordinates
+          vec2 m = u_mouse * 0.15;
+          p += m;
+
+          float t = u_time * u_speed;
+
+          // --- 1. SPATIAL SETUP (The Eclipse Center) ---
+          // Position the dark celestial body slightly to the right of center
+          vec2 center = vec2(0.3, 0.0);
+          vec2 d = p - center;
           
-          float edge1 = cellularEdge(uv1, t);
-          float glow1 = 0.02 / (edge1 + 0.015);
-          finalColor += vec3(0.1, 0.05, 0.5) * glow1; 
+          // Convert to Polar Coordinates (Radius and Angle)
+          float r = length(d);
+          float a = atan(d.y, d.x);
 
-          vec2 uv2 = rot(0.5) * uv * 6.0;
-          uv2.x += sin(uv.y * 3.0 - t * 1.5) * 0.2;
-          uv2.y += cos(uv.x * 3.0 + t * 1.2) * 0.2;
+          // --- 2. THE VOLUMETRIC RAYS (SEAMLESS FIXED) ---
+          // Evaluate warp using continuous cartesian coordinates to avoid polar seams (the horizontal cutoff bug)
+          float warp = fbm(d * 1.5 - t * 0.4); 
+          float rayAngle = a + warp * 0.9;
           
-          float edge2 = cellularEdge(uv2, t * 1.3 + 10.0);
-          float glow2 = 0.012 / (edge2 + 0.01);
-          finalColor += vec3(0.5, 0.0, 0.8) * glow2 * 0.8; 
-
-          vec2 uv3 = rot(-0.3) * uv * 10.0;
-          uv3.x += sin(uv.y * 4.0 + t * 2.0) * 0.15;
-          uv3.y -= cos(uv.x * 4.0 - t * 1.8) * 0.15;
+          // Map back to continuous circular coordinates to evaluate the ray noise seamlessly
+          vec2 rayPos = vec2(cos(rayAngle), sin(rayAngle));
           
-          float edge3 = cellularEdge(uv3, t * 1.7 + 25.0);
-          float glow3 = 0.008 / (edge3 + 0.005);
-          float pulse = 0.7 + 0.3 * sin(t * 3.0 + uv.x * 10.0);
-          finalColor += vec3(0.0, 1.0, 0.8) * glow3 * pulse; 
+          // Multiply by a factor to control the number of rays. 
+          // Adding time creates a subtle evolving shimmer without breaking continuity.
+          float rayNoise = fbm(rayPos * 3.0 + vec2(t * 0.15)); 
+          
+          // Exponentiate the noise to make the rays sharper and more distinct
+          float rayStrength = pow(rayNoise, 2.5) * 2.5;
 
-          vec3 bg = vec3(0.01, 0.01, 0.02);
-          finalColor += bg;
+          // --- 3. THE COLOR GRADIENT (SMOOTHED OVERLAP) ---
+          // Using wider, overlapping smoothstep bounds prevents horizontal banding
+          vec3 baseColor = u_colorBottom;
+          baseColor = mix(baseColor, u_colorMid, smoothstep(-0.8, 0.3, d.y));
+          baseColor = mix(baseColor, u_colorTop, smoothstep(-0.1, 0.9, d.y));
 
-          float vignette = 1.0 - length(uv) * 0.7;
-          finalColor *= smoothstep(0.0, 1.0, vignette);
+          // --- 4. THE ECLIPSE MASK & LIGHT FALLOFF ---
+          // Creates the sharp cutoff of the dark sphere blocking the light
+          float planetMask = smoothstep(u_eclipseRadius, u_eclipseRadius + 0.03, r);
+          
+          // Light scatters and fades exponentially as it travels away from the source
+          float falloff = exp(-(r - u_eclipseRadius) * 1.4);
+          
+          // Combine base glow and textured rays
+          vec3 light = baseColor * (rayStrength + 0.4) * falloff;
+          light *= planetMask;
 
-          finalColor += vec3(0.0, 0.1, 0.08) * mouseForce * 0.5;
+          // --- 5. THE CRESCENT RIM HIGHLIGHT ---
+          // A razor-thin, incredibly bright line right on the edge of the sphere
+          float rimWidth = 0.015;
+          float rim = smoothstep(u_eclipseRadius - rimWidth, u_eclipseRadius, r) * 
+                      smoothstep(u_eclipseRadius + rimWidth * 2.0, u_eclipseRadius, r);
+          
+          // Ensure the rim only appears on the left side of the sphere
+          rim *= smoothstep(0.2, -0.4, d.x);
+          
+          // Make the rim slightly cyan/white for a magical glowing edge
+          vec3 rimColor = mix(vec3(0.5, 0.8, 1.0), baseColor, 0.4); 
+          light += rimColor * rim * 3.5;
+
+          // --- 6. POST-PROCESSING & COMPOSITING ---
+          // Fade everything to absolute black on the far right (the deep void)
+          float voidFade = smoothstep(0.2, -0.4, d.x);
+          light *= voidFade;
+
+          // Base void color (Deep Space Black)
+          vec3 bg = vec3(0.005, 0.0, 0.01);
+          vec3 finalColor = max(light, bg);
+
+          // S-Curve Contrast to make the brights pop and deep darks richer
+          finalColor = finalColor * finalColor * (3.0 - 2.0 * finalColor);
+
+          // Film Grain / Dither to prevent color banding in the smooth gradients
+          finalColor += (hash(uv * 100.0 + t) - 0.5) * 0.035;
 
           gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
       }
-  `
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      // Calculate normalized mouse coordinates (-1 to 1)
+      const x = ((event.clientX - rect.left) / rect.width) * 2.0 - 1.0;
+      const y = -(((event.clientY - rect.top) / rect.height) * 2.0 - 1.0);
+      
+      mouseTarget.current.set(x, y);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      
+      // Update Uniforms
+      uniforms.u_time.value = clock.getElapsedTime();
+      uniforms.u_speed.value = speed;
+      uniforms.u_eclipseRadius.value = eclipseRadius;
+      
+      uniforms.u_colorTop.value.copy(hexToVec3(colorTop));
+      uniforms.u_colorMid.value.copy(hexToVec3(colorMid));
+      uniforms.u_colorBottom.value.copy(hexToVec3(colorBottom));
+
+      // Interpolate mouse movement for buttery smooth, delayed magnetic parallax
+      mouseCurrent.current.lerp(mouseTarget.current, 0.05);
+      uniforms.u_mouse.value.copy(mouseCurrent.current);
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      if (!container) return;
+      const { width, height } = updateSize();
+      uniforms.u_resolution.value.set(width, height);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+    };
+  }, [speed, colorTop, colorMid, colorBottom, eclipseRadius]);
+
+  return (
+    <div className={`relative w-full h-full min-h-[500px] overflow-hidden bg-[#000000] font-sans ${className}`}>
+      {/* 2D WebGL Canvas Layer - Fixed React ref assignment */}
+      <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-none" />
+
+      {/* Content Overlay Layer - Safely wrapping children */}
+      {children && (
+        <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto w-full h-full">
+            {children}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export const SynapticPlasmaWebHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#010103] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+export default function App() {
+  return (
+    <div className="w-screen h-screen bg-black">
+      {/* 
+        Instantiating the background with slightly tweaked colors 
+        and radius to closely match the provided reference image 
+      */}
+      <EclipseAuraBackground 
+        eclipseRadius={0.72} 
+        speed={0.4}
+        colorTop="#ff8c00"    // Slightly softer amber/orange
+        colorMid="#df00ff"    // Vibrant magenta
+        colorBottom="#1954ff" // Deep rich blue
+      >
+      </EclipseAuraBackground>
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(1, 1, 3, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+  );
+}
