@@ -1,7 +1,7 @@
 {
   "slug": "dimensional-portal-hero",
-  "name": "Dimensional Portal",
-  "description": "Updated self-runnable animation.",
+  "name": "Blue Silk",
+  "description": "custom WebGL fragment shader to replicate this luxurious, rippling blue silk effect.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -15,7 +15,12 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Blur & Filter",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -29,13 +34,19 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Three.js",
+    "Blur & Filter",
+    "Noise / Randomness",
+    "Glitch Effect",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/dimensional-portal-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/dimensional-portal-hero/index.jsx",
-  "created_at": "2026-07-30T09:30:25.309Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/dimensional-portal-hero/thumbnail.png"
+  "created_at": "2026-08-07T11:37:42.116Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/dimensional-portal-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/dimensional-portal-hero/video.webm"
 }
