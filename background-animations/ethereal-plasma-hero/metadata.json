@@ -1,7 +1,7 @@
 {
   "slug": "ethereal-plasma-hero",
-  "name": "Quantum Interactive Hero",
-  "description": "Fractional Brownian Motion (fbm) noise is applied to the coordinates, making the streaks waver and blend organically like smoke or fluid light.",
+  "name": "Satin Fluid",
+  "description": "global gradient that makes the bottom-left intensely bright and fades the top-right into deep, rich shadows.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -19,7 +19,12 @@
     "Noise / Randomness",
     "Touch Events",
     "3D Transform",
-    "Glitch Effect"
+    "Glitch Effect",
+    "Three.js",
+    "Blur & Filter",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -37,14 +42,19 @@
     "Noise / Randomness",
     "Touch Events",
     "3D Transform",
-    "Glitch Effect"
+    "Glitch Effect",
+    "Three.js",
+    "Blur & Filter",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/ethereal-plasma-hero/index.jsx",
-  "created_at": "2026-07-30T11:25:45.785Z",
+  "created_at": "2026-08-07T10:50:31.083Z",
   "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-hero/thumbnail.png",
   "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/ethereal-plasma-hero/video.webm"
 }
