@@ -1,325 +1,224 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
+export interface LiquidSatinProps {
+  /** @title Animation Speed */
+  speed?: number;
+  /** @title Deep Shadow Color */
+  colorDark?: string;
+  /** @title Mid-tone Fabric Color */
+  colorMid?: string;
+  /** @title Glossy Highlight Color */
+  colorLight?: string;
+  /** @title Children Content */
+  children?: React.ReactNode;
+  /** @title Extra Class Name */
+  className?: string;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
+export default function LiquidSatin({
+  speed = 0.4,
+  colorDark = '#000a1f',  // Deep, almost black navy for crevices
+  colorMid = '#0044cc',   // Rich medium blue for the body
+  colorLight = '#00ccff', // Bright electric cyan for the light cast
+  children,
   className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+}: LiquidSatinProps) {
+  const mountRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+    // Utility: Convert Hex to WebGL-friendly RGB vectors
+    const hexToRgbVec3 = (hex: string) => {
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+      return result
+        ? new THREE.Vector3(
+            parseInt(result[1], 16) / 255,
+            parseInt(result[2], 16) / 255,
+            parseInt(result[3], 16) / 255
+          )
+        : new THREE.Vector3(0.0, 0.0, 0.0);
     };
-    window.addEventListener('mousemove', handleMouseMove);
 
-    let initialSet = false;
+    // 1. Scene & Camera Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap for performance
+
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
+    container.appendChild(renderer.domElement);
+
+    // 2. Uniforms & Shaders
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_speed: { value: speed },
+      u_colorDark: { value: hexToRgbVec3(colorDark) },
+      u_colorMid: { value: hexToRgbVec3(colorMid) },
+      u_colorLight: { value: hexToRgbVec3(colorLight) },
+    };
+
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+
+    // The magic happens here: We simulate a 3D surface (Normal Mapping) 
+    // to calculate real diffuse and specular lighting against the folds.
+    const fragmentShader = `
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform float u_speed;
+      
+      uniform vec3 u_colorDark;
+      uniform vec3 u_colorMid;
+      uniform vec3 u_colorLight;
+
+      // 2D Rotation Matrix
+      mat2 rot(float a) {
+          float s = sin(a), c = cos(a);
+          return mat2(c, -s, s, c);
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        vec2 p = uv * 2.0 - 1.0;
+        
+        // Correct aspect ratio to prevent stretching on widescreen monitors
+        p.x *= u_resolution.x / u_resolution.y;
+
+        float t = u_time * u_speed;
+
+        // 1. Angle the coordinate space diagonally to match the reference video
+        p *= rot(-0.55); 
+        
+        // 2. Organic Domain Warping (The Drape)
+        // Warp the X coordinate using Y to create the sweeping drape effect
+        float drape = sin(p.y * 1.5 + t * 0.8) * 0.3 
+                    + cos(p.y * 0.8 - t * 0.5) * 0.2;
+                    
+        // Warp X based on X to create naturally varying fold widths
+        float pinch = sin(p.x * 2.0 - t * 0.3) * 0.1;
+        
+        // Final domain X for the wave function (6.5 creates ~4-5 folds on screen)
+        float x = (p.x + drape + pinch) * 6.5; 
+        
+        // 3. Physical Height and 3D Normals
+        float height = sin(x) * 0.5 + 0.5; // Maps height to 0.0 -> 1.0
+        
+        // Calculate the 3D normal vector of the wave surface
+        // The mathematical derivative (slope) of sin(x) is cos(x). 
+        // We multiply by 1.8 to artificially steepen the slopes for deeper shadows.
+        vec3 normal = normalize(vec3(-cos(x) * 1.8, 0.1, 1.0));
+        
+        // 4. Directional Lighting Setup
+        // Simulate a virtual light source coming from the top-left-front
+        vec3 lightDir = normalize(vec3(-0.8, 0.5, 0.8)); 
+        vec3 viewDir = vec3(0.0, 0.0, 1.0); // Viewer looking straight at the screen
+        vec3 halfVector = normalize(lightDir + viewDir);
+        
+        // 5. Calculate Lighting Components
+        // Diffuse (Lambertian) - Illuminates the slopes facing the light
+        float diffuse = max(dot(normal, lightDir), 0.0);
+        
+        // Specular (Blinn-Phong) - Creates the smooth, wide satin sheen
+        float specular = pow(max(dot(normal, halfVector), 0.0), 12.0);
+        
+        // Micro-peak - Creates the ultra-sharp white/cyan ridges at the very crest
+        float peak = pow(max(dot(normal, halfVector), 0.0), 64.0);
+        
+        // Ambient Occlusion - Darkens the deep valleys artificially
+        float ao = mix(0.15, 1.0, height);
+        
+        // 6. Color Blending & Material Construction
+        vec3 color = u_colorDark;                           // Start with deep shadow
+        color = mix(color, u_colorMid, diffuse);            // Blend in mid-tone based on light
+        color += u_colorLight * specular * 0.8;             // Add wide cyan satin sheen
+        color += vec3(0.85, 0.95, 1.0) * peak * 0.6;        // Add sharp bright crests
+        
+        // Apply ambient occlusion to force deep valleys into darkness
+        color *= ao;
+        
+        // 7. Post-Processing (Vignette & Contrast)
+        float dist = length(uv - 0.5);
+        color *= smoothstep(0.9, 0.2, dist * 0.8);
+        
+        // Contrast boost for richer appearance
+        color = pow(color, vec3(1.15));
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    // 3. Animation Loop
+    const clock = new THREE.Clock();
     let animationFrameId: number;
-    let startTime = performance.now();
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      uniforms.u_time.value = clock.getElapsedTime();
+      renderer.render(scene, camera);
     };
 
-    const render = (time: number) => {
-      resize();
+    animate();
 
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
+    // 4. Resize Handling
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
-      
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    window.addEventListener('resize', handleResize);
 
+    // 5. Cleanup
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
+
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [speed, colorDark, colorMid, colorLight]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-[#000411] font-sans text-white ${className}`}>
+      {/* Three.js Canvas Layer */}
+      <div ref={mountRef} className="absolute inset-0 w-full h-full z-0" />
+      
+      {/* Content Overlay */}
+      {children && (
+        <div className="relative z-10 w-full h-full">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
-
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
-    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
-    float noise(vec2 p) {
-        vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
-        return mix(mix(hash(i), hash(i+vec2(1.0, 0.0)), f.x), mix(hash(i+vec2(0.0, 1.0)), hash(i+vec2(1.0, 1.0)), f.x), f.y);
-    }
-    float fbm(vec2 p) {
-        float f = 0.0, a = 0.5;
-        mat2 r = mat2(0.8, -0.6, 0.6, 0.8);
-        for(int i = 0; i < 4; i++) { f += a * noise(p); p = r * p * 2.0; a *= 0.5; }
-        return f;
-    }
-
-    // Distance Field to a Torus (The massive Ring Light)
-    float sdTorus(vec3 p, vec2 t) { 
-        vec2 q = vec2(length(p.xz)-t.x, p.y); 
-        return length(q) - t.y; 
-    }
-
-    float map(vec3 p) {
-        // The liquid chrome floor
-        float floorPlane = p.y + 2.0;
-        
-        // Add extreme liquid displacement to the floor
-        float displacement = fbm(p.xz * 0.3 - vec2(uTime * 0.2, 0.0)) * 2.0;
-        floorPlane -= displacement;
-        
-        // The massive architectural Ring Light hovering above
-        vec3 q = p;
-        q.y -= 10.0; // High in the sky
-        q.z -= 25.0; // Far in the distance
-        q.xy *= rot(0.2); // Tilted
-        float ring = sdTorus(q, vec2(15.0, 0.5));
-        
-        return min(floorPlane, ring);
-    }
-
-    vec3 getNormal(vec3 p) {
-        vec2 e = vec2(0.01, 0.0);
-        return normalize(vec3(
-            map(p+e.xyy)-map(p-e.xyy), 
-            map(p+e.yxy)-map(p-e.yxy), 
-            map(p+e.yyx)-map(p-e.yyx)
-        ));
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Low angle camera sweeping over the liquid metal
-        vec3 ro = vec3(0.0, -1.0, uTime * 2.0);
-        vec3 rd = normalize(vec3(uv.x, uv.y + 0.1, 1.0));
-        
-        vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*1.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*1.0); rd.xz *= rot((m.x - 0.5)*2.0); 
-        }
-        
-        float dTotal = 0.0;
-        vec3 p;
-        
-        for(int i = 0; i < 100; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            if(d < 0.01 || dTotal > 80.0) break;
-            dTotal += d * 0.7; // Slower stepping for displaced floor
-        }
-        
-        vec3 col = vec3(0.02, 0.02, 0.03); // Deep studio background
-        
-        if (dTotal < 80.0) {
-            vec3 n = getNormal(p);
-            
-            // Check if we hit the ring light or the floor
-            if (p.y > 0.0) {
-                // RING LIGHT HIT
-                col = vec3(1.0, 1.0, 1.0) * 2.0; // Pure white blowout
-                // Neon aura on the ring itself
-                col += vec3(0.2, 0.5, 1.0) * 1.5;
-            } else {
-                // LIQUID CHROME FLOOR HIT
-                // Perfect mirror reflection
-                vec3 ref = reflect(rd, n);
-                
-                // We fake the reflection of the giant ring light mathematically
-                // by checking if the reflection ray intersects the theoretical torus position
-                vec3 rq = ref;
-                // Roughly aim it toward the sky where the ring is
-                float ringRefHit = smoothstep(0.98, 1.0, dot(ref, normalize(vec3(0.0, 1.0, 1.0))));
-                
-                // Base dark chrome color
-                col = vec3(0.05, 0.06, 0.08);
-                
-                // Intense blue/white specular reflection from the fake ring
-                vec3 ringLightCol = mix(vec3(1.0), vec3(0.0, 0.6, 1.0), 0.5);
-                col += ringLightCol * ringRefHit * 3.0;
-                
-                // Fresnel reflection
-                float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 4.0);
-                col += vec3(0.1, 0.3, 0.5) * fresnel;
-            }
-            
-            // Fade into dark studio fog
-            col = mix(col, vec3(0.01, 0.01, 0.02), smoothstep(30.0, 80.0, dTotal));
-        }
-        
-        // Add a global, massive lens flare / aura from the ring light
-        float ringAura = max(0.0, 1.0 - length(uv - vec2(0.0, 0.3)) * 1.5);
-        col += vec3(0.1, 0.4, 1.0) * pow(ringAura, 3.0) * 0.5;
-        
-        col = pow(col, vec3(0.85)); // Gamma
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }
-  `
-};
-
-export const NextGenHeroSectionHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#000000] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
