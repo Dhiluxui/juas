@@ -1,7 +1,7 @@
 {
   "slug": "fluid-aether-background-hero",
-  "name": "Fluid Aether",
-  "description": "Updated self-runnable animation.",
+  "name": "Luminous Slats",
+  "description": "slats are perfectly straight, increase the film grain intensity, and bias the underlying volumetric light to create a powerful, bright teal glow emanating from the bottom-right corner while the top-left remains in deep, grainy shadow.",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -14,7 +14,14 @@
     "useRef",
     "Mouse Tracking",
     "Gradient",
-    "Noise / Randomness"
+    "Noise / Randomness",
+    "Tailwind CSS",
+    "Three.js",
+    "Glassmorphism",
+    "Blur & Filter",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -27,13 +34,21 @@
     "useRef",
     "Mouse Tracking",
     "Gradient",
-    "Noise / Randomness"
+    "Noise / Randomness",
+    "Tailwind CSS",
+    "Three.js",
+    "Glassmorphism",
+    "Blur & Filter",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-aether-background-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/fluid-aether-background-hero/index.jsx",
-  "created_at": "2026-07-30T09:29:05.646Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-aether-background-hero/thumbnail.png"
+  "created_at": "2026-08-07T10:24:21.505Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-aether-background-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/fluid-aether-background-hero/video.webm"
 }
