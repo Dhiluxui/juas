@@ -1,267 +1,244 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
+// --- SHADER BACKGROUND COMPONENT ---
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
+const hexToRgbVec3 = (hex) => {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  return result
+    ? new THREE.Vector3(
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255
+      )
+    : new THREE.Vector3(0.0, 1.0, 0.0);
+};
 
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
+export function EmeraldPillarsBackground({
   speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+  barCount = 15.0,
+  colorBottom = '#34d399', // Bright Mint/Emerald
+  colorTop = '#022c22',    // Deep Dark Green
+  className = '',
+}) {
+  const mountRef = useRef(null);
+  const mouseRef = useRef({ target: new THREE.Vector2(0.5, 0.5), current: new THREE.Vector2(0.5, 0.5) });
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
+    // 1. Scene Setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    // Cap pixel ratio to ensure smooth 60fps on high-DPI displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     
-    gl.useProgram(program);
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
+    container.appendChild(renderer.domElement);
 
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
+    // 2. Uniforms & Shader
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      u_speed: { value: speed },
+      u_bars: { value: barCount },
+      u_colorBottom: { value: hexToRgbVec3(colorBottom) },
+      u_colorTop: { value: hexToRgbVec3(colorTop) },
     };
+
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
+      uniform float u_bars;
+      uniform vec3 u_colorBottom;
+      uniform vec3 u_colorTop;
+
+      // Pseudo-random noise function
+      float rand(float n) { return fract(sin(n) * 43758.5453123); }
+
+      void main() {
+        // Normalize UV coordinates (0.0 to 1.0)
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        
+        // Mouse shift for subtle parallax interaction
+        float mouseShift = (u_mouse.x - 0.5) * 0.08;
+
+        // Discretize the X-axis into distinct bars
+        float numBars = u_bars;
+        float barX = uv.x + mouseShift;
+        
+        float barIndex = floor(barX * numBars);
+        float barUV = fract(barX * numBars); // UV within the specific bar
+
+        // Mask out bars that fall completely outside the screen bounds (optional cleanup)
+        float screenEdgeMask = smoothstep(0.0, 0.001, barX) * smoothstep(1.0, 0.999, barX);
+
+        // Normalized distance from the exact center bar (0.0 at center, 1.0 at edges)
+        float normalizedIndex = barIndex / (numBars - 1.0);
+        float centerDist = abs(normalizedIndex - 0.5) * 2.0; 
+
+        // --- THE V-SHAPE MATH ---
+        // Exponentiate the center distance to create a smooth parabolic curve
+        float baseHeight = pow(centerDist, 1.5) * 0.6 + 0.15; 
+
+        // --- ANIMATION ---
+        float timeStr = u_time * u_speed;
+        
+        // Give each bar a random phase offset so they undulate naturally
+        float phase = rand(barIndex) * 6.2831;
+        float individualWave = sin(timeStr * 0.8 + phase) * 0.08;
+        
+        // Add a macroscopic wave that travels across all bars
+        float globalWave = cos(timeStr * 0.4 + centerDist * 3.0) * 0.05;
+
+        // Final dynamic height of the current bar
+        float finalHeight = baseHeight + individualWave + globalWave;
+
+        // --- VERTICAL GRADIENT FADE ---
+        // Smoothly fade the bar into the black void at its calculated height
+        float verticalFade = smoothstep(finalHeight + 0.15, finalHeight - 0.25, uv.y);
+
+        // --- BAR SEPARATION (GAPS) ---
+        // Create the dark gaps between the pillars
+        float gap = 0.04;
+        float barMask = smoothstep(gap, gap + 0.02, barUV) * smoothstep(1.0 - gap, 1.0 - gap - 0.02, barUV);
+        barMask *= screenEdgeMask;
+
+        // --- COLOR MIXING ---
+        // Map color from the bright bottom to the dark top based on the bar's specific height
+        float gradientPos = uv.y / max(finalHeight, 0.001);
+        vec3 color = mix(u_colorBottom, u_colorTop, smoothstep(0.0, 1.0, gradientPos));
+
+        // Depth dimming: center bars are slightly darker to enhance the 3D void effect
+        float depthDim = mix(0.25, 1.0, centerDist + 0.15);
+        color *= depthDim;
+
+        // --- VOLUMETRIC GLOW ---
+        // Add a soft glow that bleeds slightly above the hard fade
+        float glowFade = smoothstep(finalHeight + 0.4, finalHeight - 0.5, uv.y);
+        vec3 glow = u_colorBottom * glowFade * 0.08 * depthDim;
+
+        // Combine layers
+        vec3 finalColor = (color * barMask * verticalFade) + glow;
+
+        // --- FILM GRAIN ---
+        // Prevents color banding in the dark gradients and adds cinematic texture
+        float grain = fract(sin(dot(uv, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
+        finalColor += (grain - 0.5) * 0.035;
+
+        // Pure black void background
+        vec3 bg = vec3(0.01, 0.01, 0.02);
+        finalColor = max(finalColor, bg * (1.0 - verticalFade * barMask));
+
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    // 3. Animation Loop & Mouse Smoothing
+    const clock = new THREE.Clock();
+    let animationFrameId;
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      
+      // Update time
+      uniforms.u_time.value = clock.getElapsedTime();
+
+      // Smooth mouse interpolation for liquid-like parallax
+      const { current, target } = mouseRef.current;
+      current.lerp(target, 0.05);
+      uniforms.u_mouse.value.copy(current);
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // 4. Event Listeners
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
+    };
+
+    const handleMouseMove = (e) => {
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      // Normalize mouse coordinates (0 to 1)
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height;
+      mouseRef.current.target.set(x, y);
+    };
+
+    window.addEventListener('resize', handleResize);
     window.addEventListener('mousemove', handleMouseMove);
 
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
-    };
-
-    const render = (time: number) => {
-      resize();
-
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
-
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
-      
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-
+    // 5. Cleanup
     return () => {
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
+
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [speed, barCount, colorBottom, colorTop]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-black ${className}`}>
+      {/* The WebGL Canvas mounts here */}
+      <div ref={mountRef} className="absolute inset-0 w-full h-full z-0" />
+    </div>
   );
 }
 
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
-    }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
 
-    float hash(vec2 p) {
-        p = fract(p * vec2(123.34, 456.21));
-        p += dot(p, p + 45.32);
-        return fract(p.x * p.y);
-    }
+// --- MAIN APP / DEMO OVERLAY ---
 
-    float noise(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        float a = hash(i);
-        float b = hash(i + vec2(1.0, 0.0));
-        float c = hash(i + vec2(0.0, 1.0));
-        float d = hash(i + vec2(1.0, 1.0));
-        vec2 u = f * f * (3.0 - 2.0 * f);
-        return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-    }
-
-    float fbm(vec2 p) {
-        float v = 0.0;
-        float a = 0.5;
-        for(int i = 0; i < 5; i++) {
-            v += a * noise(p);
-            p *= 2.0;
-            a *= 0.5;
-        }
-        return v;
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        vec2 m = (uMouse.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        uv -= m * 0.3;
-
-        float dist = length(uv);
-        float angle = atan(uv.y, uv.x);
-        
-        float rot = uTime * 0.2 + dist * 2.0;
-        uv = vec2(cos(rot), -sin(rot)) * uv; 
-        
-        float val = fbm(uv * 3.0 + uTime * 0.5);
-        
-        vec3 color1 = vec3(0.1, 0.05, 0.3); 
-        vec3 color2 = vec3(0.5, 0.1, 0.6); 
-        vec3 color3 = vec3(0.1, 0.6, 0.8); 
-        
-        vec3 col = mix(color1, color2, val);
-        col = mix(col, color3, smoothstep(0.2, 0.6, val));
-        
-        float vignette = 1.0 - smoothstep(0.0, 1.2, dist);
-        col *= vignette;
-        col += 0.1 * smoothstep(0.5, 0.0, dist); 
-
-        gl_FragColor = vec4(col, 1.0);
-    }
-  `
-};
-
-export const CosmicVortexNebulaHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#050505] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+export default function App() {
+  return (
+    <div className="relative w-screen h-screen bg-black font-sans text-white overflow-hidden selection:bg-emerald-500/30">
+      
+      {/* Background Component */}
+      <EmeraldPillarsBackground 
+        speed={1.0} 
+        barCount={15.0} // Adjust this to make columns thinner or thicker
+        colorBottom="#34d399" // Tailwind Emerald-400
+        colorTop="#022c22"    // Tailwind Emerald-950
+      />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(5, 5, 5, 0.8) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+  );
+}
