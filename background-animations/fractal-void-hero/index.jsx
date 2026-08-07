@@ -1,307 +1,298 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
+export interface AuroraFrostSlatsProps {
+  /* @title Animation Speed */
+  speed?: number;
+  /* @title Number of Vertical Panels */
+  columns?: number;
+  /* @title Hot Core Color (Bottom) */
+  colorCore?: string;
+  /* @title Mid-tone Nebula Color */
+  colorMid?: string;
+  /* @title Deep Outer Void Color */
+  colorOuter?: string;
+  /* @title Film Grain Intensity */
+  grainIntensity?: number;
+  /* @title Overlay Content */
+  children?: React.ReactNode;
+  /* @title Extra CSS Classes */
+  className?: string;
 }
 
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
-  className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
-
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-    
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
-    
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
-    };
-
-    const render = (time: number) => {
-      resize();
-
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
-      }
-
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
-      
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
-
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
-
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
-      
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
-    };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
-  );
-}
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
-
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
-    // Map the 3D KIFS (Kaleidoscopic Iterated Function System) Fractal Void
-    float map(vec3 p) {
-        float t = uTime * 0.2;
-        
-        // The entire fractal void tumbles continuously
-        p.xy *= rot(t);
-        p.xz *= rot(t * 1.5);
-        
-        float scale = 1.0;
-        
-        // Fold space 7 times to create infinite complexity
-        for(int i = 0; i < 7; i++) {
-            // Mirrors along the axes
-            p = abs(p);
-            
-            // Rotation offsets for each fold
-            p.xy *= rot(0.5);
-            p.xz *= rot(0.7);
-            
-            // Scale and translate to expand the fractal
-            p = p * 2.0 - vec3(1.0, 1.2, 0.8);
-            scale *= 2.0;
-        }
-        
-        // Final distance estimation for the deeply folded geometry
-        return (length(p) - 1.5) / scale;
-    }
-
-    vec3 getNormal(vec3 p) {
-        vec2 e = vec2(0.001, 0.0);
-        return normalize(vec3(
-            map(p+e.xyy) - map(p-e.xyy), 
-            map(p+e.yxy) - map(p-e.yxy), 
-            map(p+e.yyx) - map(p-e.yyx)
-        ));
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Pushing slowly forward into the infinite abyss
-        vec3 ro = vec3(0.0, 0.0, -3.5 + uTime * 0.1);
-        vec3 rd = normalize(vec3(uv, 1.0));
-        
-        vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
-        }
-        
-        float dTotal = 0.0;
-        vec3 p;
-        float glow = 0.0;
-        
-        // Raymarch the fractal distance field
-        for(int i = 0; i < 100; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            
-            // Accumulate an ethereal magenta/purple glow trapped deep inside the fractal folds
-            glow += 0.002 / (0.005 + abs(d)) * exp(-dTotal * 0.5);
-            
-            if(d < 0.001 || dTotal > 12.0) break;
-            
-            dTotal += d * 0.8;
-        }
-        
-        vec3 col = vec3(0.0); // True pitch black void
-        
-        if (dTotal < 12.0) {
-            vec3 n = getNormal(p);
-            vec3 l = normalize(vec3(1.0, 2.0, -2.0)); // High contrast lighting
-            float diff = max(dot(n, l), 0.0);
-            
-            // The physical structure is a dark obsidian glass
-            col = vec3(0.05) * diff;
-            
-            // Razor sharp specular reflections
-            vec3 ref = reflect(rd, n);
-            float spec = pow(max(dot(ref, l), 0.0), 32.0);
-            col += spec * 0.6;
-            
-            // Intense Neon Magenta Fresnel along the fractal edges
-            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-            col += vec3(1.0, 0.0, 0.8) * fresnel * 1.5; 
-        }
-        
-        // Blend the volumetric trapped energy
-        col += vec3(0.5, 0.0, 1.0) * glow * 1.5;
-        
-        col = pow(col, vec3(0.85)); // Gamma correction
-        col *= 1.0 - dot(uv, uv) * 0.5; // Heavy cinematic vignette
-        
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }
-  `
+// Helper to convert hex strings to normalized RGB vectors for the shader
+const hexToRgbVec3 = (hex: string) => {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  return result
+    ? new THREE.Vector3(
+        parseInt(result[1], 16) / 255,
+        parseInt(result[2], 16) / 255,
+        parseInt(result[3], 16) / 255
+      )
+    : new THREE.Vector3(1.0, 1.0, 1.0);
 };
 
-export const FractalVoidHero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#000000] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
+export const AuroraFrostSlats = ({
+  speed = 1.0,
+  columns = 9,
+  colorCore = '#e0edff',   // Bright icy white/cyan core
+  colorMid = '#3d00e0',    // Deep vivid purple
+  colorOuter = '#000000',  // Pitch black void
+  grainIntensity = 0.04,
+  children,
+  className = '',
+}: AuroraFrostSlatsProps) => {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const uniformsRef = useRef<any>(null);
+  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const targetMouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const container = mountRef.current;
+
+    // 1. Setup Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: false, 
+      alpha: false,
+      powerPreference: 'high-performance' 
+    });
+
+    // Cap pixel ratio to ensure smooth 60fps on high-DPI displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
+    container.appendChild(renderer.domElement);
+
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_mouse: { value: new THREE.Vector2(0.5, 0.5) },
+      u_speed: { value: speed },
+      u_columns: { value: columns },
+      u_colorCore: { value: hexToRgbVec3(colorCore) },
+      u_colorMid: { value: hexToRgbVec3(colorMid) },
+      u_colorOuter: { value: hexToRgbVec3(colorOuter) },
+      u_grain: { value: grainIntensity },
+    };
+
+    uniformsRef.current = uniforms;
+
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      precision highp float;
+
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform vec2 u_mouse;
+      uniform float u_speed;
+      uniform float u_columns;
+      uniform vec3 u_colorCore;
+      uniform vec3 u_colorMid;
+      uniform vec3 u_colorOuter;
+      uniform float u_grain;
+
+      // 2D Rotation Matrix
+      mat2 rot(float a) {
+          float s = sin(a), c = cos(a);
+          return mat2(c, -s, s, c);
+      }
+
+      // 2D Hash function for noise
+      float hash(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+      }
+
+      // Smooth Value Noise
+      float noise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                     mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+      }
+
+      // Fractional Brownian Motion (FBM) for organic fluid motion
+      float fbm(vec2 p) {
+          float v = 0.0;
+          float a = 0.5;
+          mat2 r = rot(0.37);
+          for (int i = 0; i < 4; i++) {
+              v += a * noise(p);
+              p = r * p * 2.0;
+              a *= 0.5;
+          }
+          return v;
+      }
+
+      void main() {
+          // Normalize pixel coordinates (0.0 to 1.0)
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+          
+          float t = u_time * u_speed;
+
+          // --- SPACE PARTITIONING (The Vertical Slats) ---
+          // Divide the X axis into discrete columns
+          float colId = floor(uv.x * u_columns);
+          
+          // Local X coordinate within the specific column (0.0 to 1.0)
+          float localX = fract(uv.x * u_columns);
+
+          // We sample the organic light field from the center of each column
+          float colCenter = (colId + 0.5) / u_columns;
+          
+          // --- LIGHT PROFILING (The M-Shape Arch) ---
+          // Creates a symmetrical arch that dips slightly in the absolute center
+          float centerDist = abs(colCenter - 0.5);
+          float structuralArch = sin(colCenter * 3.14159); // Broad arch
+          float centerDip = smoothstep(0.0, 0.3, centerDist); // Pushes flanks higher than center
+          float heightProfile = structuralArch * (0.6 + 0.4 * centerDip);
+          
+          // Add slow FBM movement per column for a dynamic equalizer effect
+          float colNoise = fbm(vec2(colCenter * 2.0, t * 0.3)) * 0.3;
+          
+          // Calculate the final vertical offset for this column's light
+          float y = uv.y - heightProfile * 0.6 - colNoise;
+
+          // --- MOUSE INTERACTION ---
+          // Create a localized magnetic pull that draws the light up towards the cursor
+          vec2 m = u_mouse;
+          float mouseDist = length(vec2((colCenter - m.x) * 1.5, uv.y - m.y));
+          float mousePull = exp(-mouseDist * 6.0) * 0.25;
+          y -= mousePull;
+
+          // Ensure Y doesn't go negative so exponential decay works properly
+          y = max(0.0, y);
+
+          // --- VOLUMETRIC LIGHT FALLOFF (Exponential Decay) ---
+          // Light scatters exponentially through a medium. 
+          float coreIntensity = exp(-y * 12.0);
+          float midIntensity  = exp(-y * 3.5);
+          float outerIntensity = exp(-y * 1.0);
+
+          // Combine the light layers
+          vec3 finalColor = coreIntensity * u_colorCore 
+                          + midIntensity * u_colorMid 
+                          + outerIntensity * u_colorOuter;
+
+          // --- FAUX 3D BEVELING & SHADING ---
+          // 1. Structural Gap: Dark, sharp lines separating the panels
+          float gap = smoothstep(0.0, 0.04, localX) * smoothstep(1.0, 0.96, localX);
+          
+          // 2. Soft Bevel: Simulate frosted tubes by making edges slightly darker than centers
+          float bevel = mix(0.7, 1.1, smoothstep(0.0, 0.5, localX)) * mix(1.1, 0.6, smoothstep(0.5, 1.0, localX));
+
+          // Apply physical structures to the light
+          finalColor *= gap;
+          finalColor *= (bevel * 1.2);
+
+          // --- POST-PROCESSING ---
+          // Enforce minimum black level
+          finalColor = max(finalColor, vec3(0.005, 0.0, 0.01));
+
+          // Film Grain / Dither to prevent color banding in deep gradients
+          float grain = hash(uv * 300.0 + t);
+          finalColor += (grain - 0.5) * u_grain;
+
+          // S-Curve Contrast grading for cinematic pop
+          finalColor = finalColor * finalColor * (3.0 - 2.0 * finalColor);
+
+          gl_FragColor = vec4(clamp(finalColor, 0.0, 1.0), 1.0);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const clock = new THREE.Clock();
+    let animationFrameId: number;
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      
+      // Interpolate mouse movement for buttery smooth, delayed liquid reactions
+      mouseRef.current.lerp(targetMouseRef.current, 0.05);
+      uniforms.u_mouse.value.copy(mouseRef.current);
+      
+      uniforms.u_time.value = clock.getElapsedTime();
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
+
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = 1.0 - (e.clientY - rect.top) / rect.height; // Flip Y for standard WebGL
+      targetMouseRef.current.set(x, y);
+    };
+
+    window.addEventListener('resize', handleResize);
+    container.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      container.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
+    };
+  }, []);
+
+  // Sync dynamic props (Zero GPU teardown cost)
+  useEffect(() => {
+    if (uniformsRef.current) {
+      uniformsRef.current.u_speed.value = speed;
+      uniformsRef.current.u_columns.value = columns;
+      uniformsRef.current.u_colorCore.value = hexToRgbVec3(colorCore);
+      uniformsRef.current.u_colorMid.value = hexToRgbVec3(colorMid);
+      uniformsRef.current.u_colorOuter.value = hexToRgbVec3(colorOuter);
+      uniformsRef.current.u_grain.value = grainIntensity;
+    }
+  }, [speed, columns, colorCore, colorMid, colorOuter, grainIntensity]);
+
+  return (
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-black font-sans ${className}`}>
+      {/* 2D WebGL Canvas Layer */}
+      <div ref={mountRef} className="absolute inset-0 z-0 pointer-events-auto" />
     </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.95) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
+  );
+};
+
+export default AuroraFrostSlats;
