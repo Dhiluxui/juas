@@ -1,328 +1,197 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 
-function createShader(gl: WebGLRenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function hexToRgb(hex: string) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [
-    parseInt(result[1], 16) / 255,
-    parseInt(result[2], 16) / 255,
-    parseInt(result[3], 16) / 255
-  ] : [1, 1, 1];
-}
-
-function ShaderBackground({ 
-  vertexShaderSource, 
-  fragmentShaderSource, 
+/**
+ * BlueSilkBackground
+ * A luxurious WebGL motion background that renders smooth, flowing silk folds.
+ * Recreates the specific aesthetic of soft, continuous fabric undulating 
+ * with broad specular highlights and deep shadow crevices.
+ */
+export default function BlueSilkBackground({
+  speed = 0.5,
+  colorShadow = '#001a4d', // Deep navy for the crevices
+  colorMidtone = '#0055ff', // Rich blue for the main fabric body
+  colorHighlight = '#00ccff', // Bright cyan for the specular peaks
   className = '',
-  speed = 1.0,
-  color1 = '#ff0000',
-  color2 = '#0000ff',
-  ...props
-}: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const mouseRef = React.useRef({ x: 0, y: 0 });
+  children,
+}) {
+  const mountRef = useRef(null);
+  const frameRef = useRef(null);
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
 
-    const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-    if (!gl) return;
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    if (!vertexShader || !fragmentShader) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
+    // 1. Scene, Camera, and Renderer Setup
+    const scene = new THREE.Scene();
     
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    // Orthographic camera is ideal for full-screen 2D shaders
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     
-    gl.useProgram(program);
-
-    const positions = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]);
-    const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // Cap pixel ratio to ensure smooth 60fps performance on high-DPI displays
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     
-    const positionLocation = gl.getAttribLocation(program, 'position');
-    const aPositionLocation = gl.getAttribLocation(program, 'a_position');
-    const finalPosLoc = positionLocation >= 0 ? positionLocation : aPositionLocation;
-    if (finalPosLoc >= 0) {
-      gl.enableVertexAttribArray(finalPosLoc);
-      gl.vertexAttribPointer(finalPosLoc, 2, gl.FLOAT, false, 0, 0);
-    }
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+    renderer.setSize(width, height);
+    container.appendChild(renderer.domElement);
 
-    const uvBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
-    
-    const uvLocation = gl.getAttribLocation(program, 'uv');
-    if (uvLocation >= 0) {
-      gl.enableVertexAttribArray(uvLocation);
-      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
-    }
-
-    const timeLocation = gl.getUniformLocation(program, 'iTime');
-    const resolutionLocation = gl.getUniformLocation(program, 'iResolution');
-    const mouseLocation = gl.getUniformLocation(program, 'iMouse');
-    
-    const uTimeLocation = gl.getUniformLocation(program, 'u_time');
-    const uResolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-    const uMouseLocation = gl.getUniformLocation(program, 'u_mouse');
-    const uResLocation = gl.getUniformLocation(program, 'u_res');
-
-    const uTimeCamel = gl.getUniformLocation(program, 'uTime');
-    const uResolutionCamel = gl.getUniformLocation(program, 'uResolution');
-    const uMouseCamel = gl.getUniformLocation(program, 'uMouse');
-    
-    const uSpeedLoc = gl.getUniformLocation(program, 'uSpeed');
-    const uColor1Loc = gl.getUniformLocation(program, 'uColor1');
-    const uColor2Loc = gl.getUniformLocation(program, 'uColor2');
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      mouseRef.current.x = (e.clientX - rect.left) * dpr;
-      mouseRef.current.y = canvas.height - (e.clientY - rect.top) * dpr;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let initialSet = false;
-    let animationFrameId: number;
-    let startTime = performance.now();
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const width = canvas.clientWidth * dpr;
-      const height = canvas.clientHeight * dpr;
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-      }
+    // Helper to safely convert hex strings to THREE.Vector3 RGB values for the shader
+    const parseColor = (hex) => {
+      const c = new THREE.Color(hex);
+      return new THREE.Vector3(c.r, c.g, c.b);
     };
 
-    const render = (time: number) => {
-      resize();
+    const uniforms = {
+      u_time: { value: 0.0 },
+      u_resolution: { value: new THREE.Vector2(width, height) },
+      u_speed: { value: speed },
+      u_colorShadow: { value: parseColor(colorShadow) },
+      u_colorMidtone: { value: parseColor(colorMidtone) },
+      u_colorHighlight: { value: parseColor(colorHighlight) },
+    };
 
-      if (!initialSet && canvas.width > 0) {
-        mouseRef.current.x = canvas.width / 2;
-        mouseRef.current.y = canvas.height / 2;
-        initialSet = true;
+    const vertexShader = `
+      void main() {
+        gl_Position = vec4(position, 1.0);
       }
+    `;
 
-      gl.clearColor(0, 0, 0, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const t = (time - startTime) * 0.001;
+    // The core fragment shader that generates the smooth, silky folds
+    const fragmentShader = `
+      uniform float u_time;
+      uniform vec2 u_resolution;
+      uniform float u_speed;
       
-      if (timeLocation !== null) gl.uniform1f(timeLocation, t);
-      if (resolutionLocation !== null) gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-      if (mouseLocation !== null) gl.uniform2f(mouseLocation, mouseRef.current.x, mouseRef.current.y);
+      uniform vec3 u_colorShadow;
+      uniform vec3 u_colorMidtone;
+      uniform vec3 u_colorHighlight;
 
-      if (uTimeLocation !== null) gl.uniform1f(uTimeLocation, t);
-      if (uResolutionLocation !== null) gl.uniform2f(uResolutionLocation, canvas.width, canvas.height);
-      if (uMouseLocation !== null) gl.uniform2f(uMouseLocation, mouseRef.current.x, mouseRef.current.y);
-      if (uResLocation !== null) gl.uniform2f(uResLocation, canvas.width, canvas.height);
+      // 2D Rotation Matrix
+      mat2 rot(float a) {
+          float s = sin(a), c = cos(a);
+          return mat2(c, -s, s, c);
+      }
 
-      if (uTimeCamel !== null) gl.uniform1f(uTimeCamel, t);
-      if (uResolutionCamel !== null) gl.uniform2f(uResolutionCamel, canvas.width, canvas.height);
-      if (uMouseCamel !== null) gl.uniform2f(uMouseCamel, mouseRef.current.x, mouseRef.current.y);
+      void main() {
+          // Normalize coordinates and adjust for aspect ratio
+          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+          vec2 p = uv * 2.0 - 1.0;
+          p.x *= u_resolution.x / u_resolution.y;
+
+          float t = u_time * u_speed * 0.5; // Smooth, slow motion
+
+          // --- DOMAIN WARPING FOR SILK FOLDS ---
+          
+          // 1. Rotate the UV space diagonally to match the reference video
+          // The video has lines running roughly top-left to bottom-right
+          p *= rot(0.7); 
+          
+          // 2. Add subtle, low-frequency warping to make the folds organic
+          // We use sine waves on the Y axis to bend the X coordinates smoothly
+          float warp1 = sin(p.y * 1.5 + t) * 0.3;
+          float warp2 = cos(p.y * 0.8 - t * 0.8) * 0.2;
+          p.x += warp1 + warp2;
+
+          // --- SHAPE GENERATION ---
+          
+          // Generate the primary folds using a combination of sine waves
+          // We use multiple overlapping frequencies to create major and minor folds
+          float fold = sin(p.x * 3.5 + t * 1.2);
+          fold += sin(p.x * 2.2 - t * 0.6) * 0.5;
+          
+          // Normalize the fold value to roughly a 0.0 to 1.0 range
+          fold = fold * 0.5 + 0.5;
+
+          // --- SHADING & LIGHTING (THE FABRIC MATERIAL) ---
+          
+          // Base color: mix between deep crevices (shadow) and the fabric body (midtone)
+          // We use a smoothstep to broaden the midtones
+          float bodyMask = smoothstep(0.1, 0.85, fold);
+          vec3 finalColor = mix(u_colorShadow, u_colorMidtone, bodyMask);
+          
+          // Specular Highlight: The shiny crest of the silk folds
+          // Using a power function creates a glossy sheen. A lower power (like 2.0-3.0) 
+          // keeps it broad and soft like satin/silk, unlike the sharp laser of the kinetic shaders.
+          float specular = pow(smoothstep(0.5, 1.0, fold), 2.5);
+          finalColor = mix(finalColor, u_colorHighlight, specular * 0.9);
+
+          // Secondary Rim Light / Reflection in the valleys
+          // Silk often has internal reflections in the shadows
+          float rim = pow(smoothstep(0.4, 0.0, fold), 2.0);
+          finalColor += u_colorMidtone * rim * 0.3;
+
+          // --- POST PROCESSING ---
+          
+          // Subtle Vignette to give depth to the corners
+          float dist = length(uv - 0.5);
+          finalColor *= smoothstep(1.0, 0.3, dist) * 0.4 + 0.6; 
+          
+          // Slight contrast bump to make the blues pop
+          finalColor = smoothstep(0.0, 1.0, finalColor);
+
+          gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+
+    const material = new THREE.ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    const clock = new THREE.Clock();
+
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || window.innerHeight;
       
-      if (uSpeedLoc !== null) gl.uniform1f(uSpeedLoc, speed);
-      if (uColor1Loc !== null) {
-        const c1 = hexToRgb(color1);
-        gl.uniform3f(uColor1Loc, c1[0], c1[1], c1[2]);
-      }
-      if (uColor2Loc !== null) {
-        const c2 = hexToRgb(color2);
-        gl.uniform3f(uColor2Loc, c2[0], c2[1], c2[2]);
-      }
-
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      animationFrameId = requestAnimationFrame(render);
+      renderer.setSize(w, h);
+      uniforms.u_resolution.value.set(w, h);
     };
+    window.addEventListener('resize', handleResize, { passive: true });
 
-    animationFrameId = requestAnimationFrame(render);
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate);
+      uniforms.u_time.value = clock.getElapsedTime();
+      renderer.render(scene, camera);
+    };
+    animate();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertexShader);
-      gl.deleteShader(fragmentShader);
-      gl.deleteBuffer(positionBuffer);
-      gl.deleteBuffer(uvBuffer);
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      window.removeEventListener('resize', handleResize);
+      
+      if (container && renderer.domElement && container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+      
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
-  }, [vertexShaderSource, fragmentShaderSource, speed, color1, color2]);
+  }, [speed, colorShadow, colorMidtone, colorHighlight]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full block pointer-events-auto ${className}`}
-      style={{ touchAction: 'none' }}
-    />
+    <div className={`relative w-full h-full min-h-screen overflow-hidden bg-[#00081a] ${className}`}>
+      {/* WebGL Canvas Background */}
+      <div 
+        ref={mountRef} 
+        className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+      />
+      
+      {/* Overlay Content Slot */}
+      {children && (
+        <div className="relative z-10 w-full h-full">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
-
-const shaderData = {
-  vertex: `
-    attribute vec2 position;
-    void main() { gl_Position = vec4(position, 0.0, 1.0); }
-  `,
-  fragment: `
-    precision highp float;
-    uniform vec2 uResolution;
-    uniform float uTime;
-    uniform vec2 uMouse;
-
-    mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
-    // Distance to an Octahedron (The lattice nodes)
-    float sdOctahedron(vec3 p, float s) {
-        p = abs(p);
-        return (p.x + p.y + p.z - s) * 0.57735027;
-    }
-
-    // Map the Infinite 3D Crystal Lattice Geometry
-    float map(vec3 p) {
-        vec3 q = p;
-        float spacing = 2.0;
-        
-        // 3D Modulo for infinite repetition
-        vec3 id = floor(q / spacing);
-        q = mod(q, spacing) - spacing * 0.5;
-        
-        // Structural struts (Cylindrical connections along X, Y, Z axes)
-        float dStrutX = length(q.yz) - 0.05;
-        float dStrutY = length(q.xz) - 0.05;
-        float dStrutZ = length(q.xy) - 0.05;
-        float dStruts = min(dStrutX, min(dStrutY, dStrutZ));
-        
-        // Nodes (Octahedra placed at intersections)
-        // Nodes pulse in size based on a sine wave propagating through space
-        float pulse = sin(uTime * 3.0 + length(id) * 0.5) * 0.1 + 0.2;
-        float dNode = sdOctahedron(q, pulse);
-        
-        // Combine struts and nodes
-        float d = min(dStruts, dNode);
-        
-        // Architecturally hollow out massive spherical "rooms" inside the lattice
-        float voidD = length(mod(p, 8.0) - 4.0) - 2.5;
-        
-        // Subtract the voids from the lattice
-        return max(d, -voidD);
-    }
-
-    // Surface Normals for rendering reflections
-    vec3 getNormal(vec3 p) {
-        vec2 e = vec2(0.001, 0.0);
-        return normalize(vec3(
-            map(p+e.xyy) - map(p-e.xyy),
-            map(p+e.yxy) - map(p-e.yxy),
-            map(p+e.yyx) - map(p-e.yyx)
-        ));
-    }
-
-    void main() {
-        vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
-        
-        // Gentle cinematic flight through the lattice rooms
-        vec3 ro = vec3(uTime * 0.5, 0.5, uTime * 0.8);
-        vec3 rd = normalize(vec3(uv, 1.0));
-        
-        vec2 m = uMouse / uResolution;
-        if(length(uMouse) > 10.0) { 
-            ro.yz *= rot((m.y - 0.5)*2.0); ro.xz *= rot((m.x - 0.5)*2.0); 
-            rd.yz *= rot((m.y - 0.5)*2.0); rd.xz *= rot((m.x - 0.5)*2.0); 
-        }
-        
-        // Slight roll
-        ro.xy *= rot(uTime * 0.1); 
-        rd.xy *= rot(uTime * 0.1);
-        
-        float dTotal = 0.0;
-        vec3 p;
-        float glow = 0.0;
-        
-        // Raymarch
-        for(int i = 0; i < 100; i++) {
-            p = ro + rd * dTotal;
-            float d = map(p);
-            
-            // Accumulate volumetric neon energy near the lattice structure
-            glow += 0.002 / (0.01 + abs(d)) * exp(-dTotal * 0.1);
-            
-            if(d < 0.001 || dTotal > 15.0) break;
-            dTotal += d * 0.8;
-        }
-        
-        // Ambient background void
-        vec3 col = vec3(0.01, 0.0, 0.02);
-        
-        // Hit the geometry
-        if (dTotal < 15.0) {
-            vec3 n = getNormal(p);
-            
-            // Light source
-            vec3 l = normalize(vec3(sin(uTime), 1.0, cos(uTime)));
-            float diff = max(dot(n, l), 0.0);
-            
-            // Environment Reflection (Simulating an unseen iridescent nebula)
-            vec3 ref = reflect(rd, n);
-            float env = sin(ref.x * 5.0 + uTime) * cos(ref.y * 5.0) * sin(ref.z * 5.0);
-            
-            // Hard glossy specular highlight
-            vec3 spec = vec3(1.0) * pow(max(dot(ref, l), 0.0), 32.0);
-            float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-            
-            // Compose the Dark Crystal Material
-            col = vec3(0.05, 0.05, 0.1) * diff; // Diffuse base
-            col += mix(vec3(0.0, 0.5, 1.0), vec3(1.0, 0.0, 0.8), env * 0.5 + 0.5) * fresnel * 1.5; // Iridescent edges
-            col += spec; // Sparkles
-        }
-        
-        // Add the glowing volumetric pulse traversing the nodes
-        vec3 pulseCol = mix(vec3(0.0, 0.8, 1.0), vec3(0.8, 0.0, 1.0), sin(uTime + p.z * 0.5) * 0.5 + 0.5);
-        col += pulseCol * glow * 0.8;
-        
-        // Depth fog
-        col = mix(col, vec3(0.01, 0.0, 0.02), smoothstep(8.0, 15.0, dTotal));
-        
-        col = pow(col, vec3(0.85)); // Gamma
-        col *= 1.0 - dot(uv, uv) * 0.4; // Vignette
-        
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }
-  `
-};
-
-export const CrystalLatticeV3Hero = ({ className = '', children, ...props }: any) => (
-  <div className={`relative w-full h-full bg-[#020004] overflow-hidden font-sans ${className}`}>
-    <div className="absolute inset-0 z-0">
-      <ShaderBackground vertexShaderSource={shaderData.vertex} fragmentShaderSource={shaderData.fragment} {...props} />
-    </div>
-    <div className="absolute inset-0 z-[2] pointer-events-none" style={{ background: 'radial-gradient(circle at center, transparent 30%, rgba(2, 0, 4, 0.9) 100%)' }} />
-    <div className="relative z-10 w-full h-full pointer-events-none flex flex-col items-center justify-center">
-      <div className="pointer-events-auto">{children}</div>
-    </div>
-  </div>
-);
