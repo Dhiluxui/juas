@@ -125,6 +125,7 @@ const AuroraNeonFlow = ({
     const col2Loc = gl.getUniformLocation(program, "uColor2");
 
     let frameId;
+    
     const render = (t) => {
       // Resize canvas if needed to match display size
       if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
@@ -136,8 +137,10 @@ const AuroraNeonFlow = ({
       gl.uniform1f(timeLoc, t * 0.001);
       gl.uniform2f(resLoc, canvas.width, canvas.height);
       gl.uniform2f(mouseLoc, mouseRef.current[0], mouseRef.current[1]);
-      gl.uniform3fv(col1Loc, color1);
-      gl.uniform3fv(col2Loc, color2);
+      
+      // FIX: WebGL requires specifically Float32Array sequences for uniform[1234]fv
+      gl.uniform3fv(col1Loc, new Float32Array(color1));
+      gl.uniform3fv(col2Loc, new Float32Array(color2));
       
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       frameId = requestAnimationFrame(render);
@@ -153,9 +156,8 @@ const AuroraNeonFlow = ({
       gl.deleteShader(fShader);
       gl.deleteBuffer(buffer);
     };
-  }, [color1, color2]); // Re-initialize if colors change drastically, though uniforms update dynamically
+  }, [color1, color2]); // Re-initialize if colors change
 
-  // Fixed className template literal syntax
   return <canvas ref={canvasRef} className={`w-full h-full block ${className}`} />;
 };
 
@@ -166,6 +168,15 @@ export default function App() {
         color1={[0.9, 0.2, 0.8]} 
         color2={[0.1, 0.6, 1.0]} 
       />
+      {/* Optional: Add a title overlay to demonstrate background rendering */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <h1 className="text-white/80 text-5xl md:text-7xl font-bold tracking-tighter mix-blend-overlay">
+          NEON AURORA
+        </h1>
+        <p className="text-white/50 mt-4 tracking-widest text-sm uppercase">
+          Move your cursor
+        </p>
+      </div>
     </div>
   );
 }
