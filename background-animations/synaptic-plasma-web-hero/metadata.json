@@ -1,7 +1,7 @@
 {
   "slug": "synaptic-plasma-web-hero",
-  "name": "Synaptic Plasma Web",
-  "description": "Updated self-runnable animation.",
+  "name": "Filecoin Eclipse Banner",
+  "description": "Filecoin Eclipse Banner",
   "category": "Background Animations",
   "tags": [
     "React",
@@ -13,7 +13,13 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Three.js",
+    "Noise / Randomness",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "tech_stack": [
     "React",
@@ -25,13 +31,20 @@
     "useEffect",
     "useRef",
     "Mouse Tracking",
-    "Gradient"
+    "Gradient",
+    "Tailwind CSS",
+    "Three.js",
+    "Noise / Randomness",
+    "Magnetic",
+    "Morphing",
+    "Responsive"
   ],
   "creator_id": "eb5cc7a2-420d-4875-be41-cb2949a1ee90",
   "creator_username": "eb5cc7a2",
   "cdn_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/synaptic-plasma-web-hero/index.jsx",
   "cdn_css_url": null,
   "github_url": "https://github.com/Dhiluxui/juas/blob/main/background-animations/synaptic-plasma-web-hero/index.jsx",
-  "created_at": "2026-07-30T09:26:29.902Z",
-  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/synaptic-plasma-web-hero/thumbnail.png"
+  "created_at": "2026-08-07T11:05:48.857Z",
+  "thumbnail_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/synaptic-plasma-web-hero/thumbnail.png",
+  "video_url": "https://cdn.jsdelivr.net/gh/Dhiluxui/juas@main/background-animations/synaptic-plasma-web-hero/video.webm"
 }
